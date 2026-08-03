@@ -106,18 +106,19 @@ detect_arch() {
 }
 
 # Download the latest release binary from the default GitHub repo.
+# DDNS_RS_REPO / DDNS_RS_VERSION can override the defaults.
 install_default() {
     local arch=$(detect_arch)
     [ -n "$arch" ] || { echo "unsupported architecture: $(uname -m)"; exit 1; }
 
     local repo="${DDNS_RS_REPO:-tagore-cai/ddns-rs}"
+    local latest="${DDNS_RS_VERSION:-0.1.0}"
 
-    # Prefer an explicit version set by the caller (e.g. from LuCI) to avoid
-    # hitting the unauthenticated GitHub API rate limit (60 req/h per IP).
-    local latest="${DDNS_RS_VERSION:-}"
-
+    # Only fall back to the GitHub API when the caller did not provide a
+    # version. This avoids unauthenticated rate limits (60 req/h/IP) and
+    # timeouts on routers when talking to api.github.com.
     if [ -z "$latest" ]; then
-        latest=$(curl -fsSL -A "ddns-rs-binary" \
+        latest=$(curl -fsSL -m 15 -A "ddns-rs-binary" \
             "https://api.github.com/repos/${repo}/releases/latest" 2>/dev/null \
             | grep -o '"tag_name":[^,]*' | head -1 | sed -E 's/.*"v?([^"]+)".*/\1/')
     fi

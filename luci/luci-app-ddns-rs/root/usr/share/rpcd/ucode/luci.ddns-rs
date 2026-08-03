@@ -59,11 +59,11 @@ const methods = {
 			let url = (arg && arg.url) ? arg.url : '';
 			if (!url)
 				return { result: 'URL is required' };
-			const fd = popen(`/usr/libexec/ddns-rs-binary install '${replace(url, "'", "'\\''")}'`);
+			const fd = popen(`/usr/libexec/ddns-rs-binary install '${replace(url, "'", "'\\''")}' 2>&1`);
 			if (fd) {
-				let out = fd.read('all');
+				let out = trim(fd.read('all'));
 				fd.close();
-				return { result: trim(out) };
+				return { result: out ? out : 'no output from install' };
 			}
 			return { result: 'failed to run install' };
 		}
@@ -75,11 +75,11 @@ const methods = {
 			// Only accept files uploaded to /tmp by the LuCI frontend.
 			if (!path || match(path, /(^|\/)\.\.(\/|$)/) || !match(path, /^\/tmp\/[A-Za-z0-9._-]+$/))
 				return { result: 'invalid upload path' };
-			const fd = popen(`/usr/libexec/ddns-rs-binary install-file '${replace(path, "'", "'\\''")}'`);
+			const fd = popen(`/usr/libexec/ddns-rs-binary install-file '${replace(path, "'", "'\\''")}' 2>&1`);
 			if (fd) {
-				let out = fd.read('all');
+				let out = trim(fd.read('all'));
 				fd.close();
-				return { result: trim(out) };
+				return { result: out ? out : 'no output from install-file' };
 			}
 			return { result: 'failed to run install-file' };
 		}
@@ -87,11 +87,11 @@ const methods = {
 
 	binary_update: {
 		call: function() {
-			const fd = popen('/usr/libexec/ddns-rs-binary update');
+			const fd = popen('/usr/libexec/ddns-rs-binary update 2>&1');
 			if (fd) {
-				let out = fd.read('all');
+				let out = trim(fd.read('all'));
 				fd.close();
-				return { result: trim(out) };
+				return { result: out ? out : 'no output from update' };
 			}
 			return { result: 'failed to run update' };
 		}
