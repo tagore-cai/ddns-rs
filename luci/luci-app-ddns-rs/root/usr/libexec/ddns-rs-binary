@@ -110,11 +110,22 @@ install_default() {
     local arch=$(detect_arch)
     [ -n "$arch" ] || { echo "unsupported architecture: $(uname -m)"; exit 1; }
 
-    # Resolve latest version via GitHub API
-    local repo="${DDNS_RS_REPO:-jeessy2/ddns-rs}"
-    local latest=$(curl -fsSL "https://api.github.com/repos/${repo}/releases/latest" 2>/dev/null \
-        | grep '"tag_name"' | head -1 | sed -E 's/.*"v?([^"]+)".*/\1/')
-    [ -n "$latest" ] || { echo "cannot determine latest version"; exit 1; }
+    local repo="${DDNS_RS_REPO:-tagore-cai/ddns-rs}"
+
+    # Prefer an explicit version set by the caller (e.g. from LuCI) to avoid
+    # hitting the unauthenticated GitHub API rate limit (60 req/h per IP).
+    local latest="${DDNS_RS_VERSION:-}"
+
+    if [ -z "$latest" ]; then
+        latest=$(curl -fsSL -A "ddns-rs-binary" \
+            "https://api.github.com/repos/${repo}/releases/latest" 2>/dev/null \
+            | grep -o '"tag_name":[^,]*' | head -1 | sed -E 's/.*"v?([^"]+)".*/\1/')
+    fi
+
+    [ -n "$latest" ] || {
+        echo "cannot determine latest version; set DDNS_RS_VERSION or use 'install <url>'"
+        exit 1
+    }
 
     local url="https://github.com/${repo}/releases/download/v${latest}/ddns-rs_${latest}_linux_${arch}.tar.gz"
     log "Downloading ddns-rs ${latest} (${arch})"

@@ -15,13 +15,15 @@ var callService = rpc.declare({
 var callInstall = rpc.declare({
     object: 'luci.ddns-rs',
     method: 'binary_install',
-    expect: {}
+    expect: {},
+    params: { url: true }
 });
 
 var callUpload = rpc.declare({
     object: 'luci.ddns-rs',
     method: 'binary_upload',
-    expect: {}
+    expect: {},
+    params: { path: true }
 });
 
 var callUpdate = rpc.declare({
