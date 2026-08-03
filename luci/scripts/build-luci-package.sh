@@ -6,9 +6,9 @@ set -eu
 # OpenWrt 25.x apk package manager) without the OpenWrt SDK.
 #
 # Produces a single architecture-independent package that contains both the
-# ddns-rs service files (init script, config, binary manager) and the LuCI
+# ddns-rs service files (init script, config, rpcd binary manager) and the LuCI
 # frontend. The ddns-rs binary itself is NOT bundled; it is installed and
-# updated via the LuCI "Binary" page (usr/libexec/ddns-rs-binary).
+# updated via the LuCI "Binary" page (rpcd plugin /usr/libexec/rpcd/luci.ddns-rs).
 #
 #   dist/luci-app-ddns-rs_{version}-r1_all.{ipk,apk}
 #   dist/sha256sums.txt
@@ -164,7 +164,7 @@ if [ -d "$LUCI_DIR/root" ]; then
 	cp -R "$LUCI_DIR/root/." "$DATA_DIR/"
 fi
 chmod 755 "$DATA_DIR/etc/init.d/ddns-rs" 2>/dev/null || true
-chmod 755 "$DATA_DIR/usr/libexec/ddns-rs-binary" 2>/dev/null || true
+chmod 755 "$DATA_DIR/usr/libexec/rpcd/luci.ddns-rs" 2>/dev/null || true
 chmod 755 "$DATA_DIR/usr/libexec/ddns-rs-call" 2>/dev/null || true
 if [ -f "$DATA_DIR/etc/uci-defaults/99-luci-ddns-rs" ]; then
 	chmod 755 "$DATA_DIR/etc/uci-defaults/99-luci-ddns-rs"

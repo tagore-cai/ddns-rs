@@ -6,7 +6,49 @@ msgstr ""
 msgid "Install failed"
 msgstr ""
 
-msgid "Install failed: %s"
+msgid "Stage: "
+msgstr ""
+
+msgid "Reason: "
+msgstr ""
+
+msgid "Details: "
+msgstr ""
+
+msgid "Error code: "
+msgstr ""
+
+msgid "Installed"
+msgstr ""
+
+msgid "Not installed"
+msgstr ""
+
+msgid "Running"
+msgstr ""
+
+msgid "Stopped"
+msgstr ""
+
+msgid "Status check error"
+msgstr ""
+
+msgid "Waiting for command output..."
+msgstr ""
+
+msgid "Close"
+msgstr ""
+
+msgid "DDNS-RS Binary"
+msgstr ""
+
+msgid "Command output"
+msgstr ""
+
+msgid "Operation failed"
+msgstr ""
+
+msgid "Operation completed."
 msgstr ""
 
 msgid "Please select a file to upload"
@@ -18,22 +60,37 @@ msgstr ""
 msgid "Network error"
 msgstr ""
 
-msgid "Installed"
-msgstr ""
-
-msgid "Not installed"
-msgstr ""
-
-msgid "Status check error"
-msgstr ""
-
 msgid "DDNS-RS Binary Status"
 msgstr ""
 
 msgid "Loading..."
 msgstr ""
 
-msgid "Upload failed: %s"
+msgid "Version"
+msgstr ""
+
+msgid "Binary path"
+msgstr ""
+
+msgid "Service"
+msgstr ""
+
+msgid "Please enter a download URL"
+msgstr ""
+
+msgid "Installing ddns-rs from URL..."
+msgstr ""
+
+msgid "Install from URL"
+msgstr ""
+
+msgid "Enter a direct download URL of the ddns-rs binary or .tar.gz archive."
+msgstr ""
+
+msgid "Installing uploaded ddns-rs binary..."
+msgstr ""
+
+msgid "Upload has been cancelled"
 msgstr ""
 
 msgid "Upload & Install"
@@ -42,16 +99,10 @@ msgstr ""
 msgid "Install Binary"
 msgstr ""
 
-msgid "Upload a ddns-rs binary or .tar.gz archive, or enter a direct download URL below."
+msgid "Upload a ddns-rs binary or .tar.gz archive."
 msgstr ""
 
-msgid "Please enter a download URL"
-msgstr ""
-
-msgid "Install from URL"
-msgstr ""
-
-msgid "Enter a direct download URL of the ddns-rs binary or .tar.gz archive."
+msgid "Updating ddns-rs..."
 msgstr ""
 
 msgid "Auto Install/Update"
@@ -121,9 +172,6 @@ msgid "DDNS-Go command reset may have failed, but configuration file has been up
 msgstr ""
 
 msgid "You may need to restart DDNS-Go service manually."
-msgstr ""
-
-msgid "Close"
 msgstr ""
 
 msgid "ERROR:"

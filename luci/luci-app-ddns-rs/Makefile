@@ -5,7 +5,7 @@
 # Single architecture-independent package (PKGARCH=all) containing the LuCI
 # UI, rpcd backend, init script, UCI config and the ddns-rs binary manager.
 # The ddns-rs binary itself is NOT bundled - it is installed and updated via
-# the LuCI "Binary" page (usr/libexec/ddns-rs-binary) or `ddns-rs -u`.
+# the LuCI "Binary" page (rpcd plugin /usr/libexec/rpcd/luci.ddns-rs) or `ddns-rs -u`.
 #
 
 include $(TOPDIR)/rules.mk

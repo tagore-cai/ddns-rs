@@ -83,11 +83,10 @@ tar_nested_has_member "$OUT_DIR/${BASE}.ipk" control.tar.gz postinst
 tar_nested_has_member "$OUT_DIR/${BASE}.ipk" control.tar.gz postrm
 tar_nested_has_member "$OUT_DIR/${BASE}.ipk" data.tar.gz etc/init.d/ddns-rs
 tar_nested_has_member "$OUT_DIR/${BASE}.ipk" data.tar.gz etc/config/ddns-rs
-tar_nested_has_member "$OUT_DIR/${BASE}.ipk" data.tar.gz usr/libexec/ddns-rs-binary
+tar_nested_has_member "$OUT_DIR/${BASE}.ipk" data.tar.gz usr/libexec/rpcd/luci.ddns-rs
 tar_nested_has_member "$OUT_DIR/${BASE}.ipk" data.tar.gz usr/libexec/ddns-rs-call
 tar_nested_has_member "$OUT_DIR/${BASE}.ipk" data.tar.gz usr/share/luci/menu.d/luci-app-ddns-rs.json
 tar_nested_has_member "$OUT_DIR/${BASE}.ipk" data.tar.gz usr/share/rpcd/acl.d/luci-app-ddns-rs.json
-tar_nested_has_member "$OUT_DIR/${BASE}.ipk" data.tar.gz usr/share/rpcd/ucode/luci.ddns-rs
 tar_nested_has_member "$OUT_DIR/${BASE}.ipk" data.tar.gz www/luci-static/resources/view/ddns-rs/config.js
 tar_nested_has_member "$OUT_DIR/${BASE}.ipk" data.tar.gz www/luci-static/resources/view/ddns-rs/binary.js
 
@@ -98,7 +97,7 @@ tar_member_contains "$OUT_DIR/${BASE}.apk" .PKGINFO '^datahash = [0-9a-f][0-9a-f
 apk_data_has_checksum "$OUT_DIR/${BASE}.apk"
 tar_has_member "$OUT_DIR/${BASE}.apk" etc/init.d/ddns-rs
 tar_has_member "$OUT_DIR/${BASE}.apk" etc/config/ddns-rs
-tar_has_member "$OUT_DIR/${BASE}.apk" usr/libexec/ddns-rs-binary
+tar_has_member "$OUT_DIR/${BASE}.apk" usr/libexec/rpcd/luci.ddns-rs
 tar_has_member "$OUT_DIR/${BASE}.apk" usr/libexec/ddns-rs-call
 tar_has_member "$OUT_DIR/${BASE}.apk" usr/share/luci/menu.d
 tar_has_member "$OUT_DIR/${BASE}.apk" www/luci-static/resources/view/ddns-rs

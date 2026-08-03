@@ -1,0 +1,530 @@
+#!/bin/sh
+# SPDX-License-Identifier: GPL-3.0-only
+#
+# ddns-rs binary manager - rpcd exec plugin used by the LuCI interface.
+#
+# This is a rpcd exec plugin: rpcd invokes this script with either
+#   luci.ddns-rs list                      -> print available methods
+#   luci.ddns-rs call <method> [<args>]    -> run a method
+# Method arguments are passed as JSON on stdin, results are written as
+# JSON on stdout. The pattern follows luci-app-oxidns.
+#
+# The ddns-rs package does not bundle the binary; it is downloaded or
+# uploaded and installed via this plugin.
+
+set -eu
+
+BIN=/usr/bin/ddns-rs
+TMP_ROOT="${TMPDIR:-/tmp}"
+PROGRESS_DIR="$TMP_ROOT/luci-ddns-rs"
+PROGRESS_LOG="$PROGRESS_DIR/progress.log"
+LOCK_DIR="$PROGRESS_DIR/operation.lock"
+LOCK_HELD=0
+
+DEFAULT_REPO="tagore-cai/ddns-rs"
+DEFAULT_VERSION="0.1.0"
+
+# ---------------------------------------------------------------- json utils
+
+json_escape_stream() {
+	awk 'BEGIN { ORS = "" }
+	{
+		if (NR > 1)
+			printf "\\n";
+		for (i = 1; i <= length($0); i++) {
+			c = substr($0, i, 1);
+			if (c == "\\")
+				printf "\\\\";
+			else if (c == "\"")
+				printf "\\\"";
+			else if (c == "\t")
+				printf "\\t";
+			else if (c == "\r")
+				printf "\\r";
+			else
+				printf "%s", c;
+		}
+	}'
+}
+
+json_string() {
+	printf '"'
+	printf '%s' "$1" | json_escape_stream
+	printf '"'
+}
+
+json_file_string() {
+	printf '"'
+	if [ -r "$1" ]; then
+		json_escape_stream < "$1"
+	fi
+	printf '"'
+}
+
+json_bool() {
+	if [ "${1:-0}" = "1" ]; then
+		printf 'true'
+	else
+		printf 'false'
+	fi
+}
+
+json_error() {
+	printf '{'
+	printf '"ok":false,'
+	printf '"code":'
+	json_string "$1"
+	printf ',"message":'
+	json_string "$2"
+	printf '}\n'
+}
+
+json_detailed_error() {
+	CODE="$1"
+	MESSAGE="$2"
+	STAGE="${3:-}"
+	DETAIL="${4:-}"
+
+	printf '{'
+	printf '"ok":false,'
+	printf '"code":'
+	json_string "$CODE"
+	printf ',"message":'
+	json_string "$MESSAGE"
+	if [ -n "$STAGE" ]; then
+		printf ',"stage":'
+		json_string "$STAGE"
+	fi
+	if [ -n "$DETAIL" ]; then
+		printf ',"detail":'
+		json_string "$DETAIL"
+	fi
+	printf '}\n'
+}
+
+input_value() {
+	KEY="$1"
+	INPUT="$2"
+	if command -v jsonfilter >/dev/null 2>&1; then
+		printf '%s' "$INPUT" | jsonfilter -e "@.$KEY" 2>/dev/null || true
+	else
+		printf '%s' "$INPUT" | sed -n "s/.*\"$KEY\"[[:space:]]*:[[:space:]]*\"\\([^\"]*\\)\".*/\\1/p"
+	fi
+}
+
+# ------------------------------------------------------------ progress + lock
+
+progress_log() {
+	KIND="$1"
+	MESSAGE="$2"
+	mkdir -p "$PROGRESS_DIR" 2>/dev/null || true
+	printf '[%s] %s %s\n' "$(date '+%H:%M:%S' 2>/dev/null || printf '--:--:--')" "$KIND" "$MESSAGE" >> "$PROGRESS_LOG" 2>/dev/null || true
+}
+
+progress_command() {
+	progress_log "command" "+ $1"
+}
+
+progress_reset() {
+	mkdir -p "$PROGRESS_DIR" 2>/dev/null || true
+	: > "$PROGRESS_LOG" 2>/dev/null || true
+	progress_log "info" "$1"
+}
+
+pid_is_running() {
+	case "$1" in
+		''|*[!0-9]*)
+			return 1
+			;;
+	esac
+	kill -0 "$1" 2>/dev/null
+}
+
+clear_stale_lock() {
+	[ -d "$LOCK_DIR" ] || return 1
+	LOCK_PID="$(sed -n '1p' "$LOCK_DIR/pid" 2>/dev/null || true)"
+	if pid_is_running "$LOCK_PID"; then
+		return 1
+	fi
+	rm -f "$LOCK_DIR/pid" 2>/dev/null || true
+	rmdir "$LOCK_DIR" 2>/dev/null || true
+}
+
+acquire_lock() {
+	mkdir -p "$PROGRESS_DIR" 2>/dev/null || {
+		json_error "lock_failed" "failed to prepare operation directory"
+		return 1
+	}
+	if mkdir "$LOCK_DIR" 2>/dev/null || { clear_stale_lock && mkdir "$LOCK_DIR" 2>/dev/null; }; then
+		LOCK_HELD=1
+		printf '%s\n' "$$" > "$LOCK_DIR/pid" 2>/dev/null || true
+		return 0
+	fi
+	json_error "operation_busy" "another ddns-rs binary operation is already running"
+	return 1
+}
+
+release_lock() {
+	if [ "$LOCK_HELD" = "1" ]; then
+		rm -f "$LOCK_DIR/pid" 2>/dev/null || true
+		rmdir "$LOCK_DIR" 2>/dev/null || true
+		LOCK_HELD=0
+	fi
+}
+
+run_locked() {
+	acquire_lock || return 1
+	trap 'release_lock' EXIT
+	trap 'release_lock; exit 1' HUP INT TERM
+	"$@"
+	ACTION_RC="$?"
+	release_lock
+	trap - EXIT HUP INT TERM
+	return "$ACTION_RC"
+}
+
+# -------------------------------------------------------------- service info
+
+binary_installed() {
+	[ -x "$BIN" ]
+}
+
+binary_version() {
+	if binary_installed; then
+		"$BIN" -v 2>/dev/null || echo "unknown"
+	else
+		echo "not-installed"
+	fi
+}
+
+service_running() {
+	[ -x /etc/init.d/ddns-rs ] || return 1
+	/etc/init.d/ddns-rs running >/dev/null 2>&1
+}
+
+detect_arch() {
+	case "$(uname -m)" in
+		x86_64)   echo "x86_64" ;;
+		aarch64)  echo "arm64" ;;
+		armv7l|armv7) echo "armv7" ;;
+		riscv64)  echo "riscv64" ;;
+		*)        echo "" ;;
+	esac
+}
+
+# ------------------------------------------------------------- install logic
+
+validate_elf() {
+	FILE="$1"
+	if command -v hexdump >/dev/null 2>&1; then
+		MAGIC="$(dd if="$FILE" bs=4 count=1 2>/dev/null | hexdump -v -e '1/1 "%02x"')"
+	else
+		MAGIC="$(dd if="$FILE" bs=4 count=1 2>/dev/null | od -An -tx1 | tr -d ' \n')"
+	fi
+	[ "$MAGIC" = "7f454c46" ]
+}
+
+# Install ddns-rs from a local file: either a raw ELF binary or a tar.gz
+# archive containing a file named ddns-rs.
+install_from_file() {
+	SRC="$1"
+	KIND="$2"
+
+	[ -n "$SRC" ] && [ -f "$SRC" ] || {
+		json_detailed_error "file_missing" "file not found" "$KIND" "path=${SRC:-missing}"
+		return 1
+	}
+
+	UNPACK_DIR="$(mktemp -d "$TMP_ROOT/ddns-rs-unpack.XXXXXX" 2>/dev/null)"
+	[ -n "$UNPACK_DIR" ] || {
+		json_detailed_error "unpack_failed" "cannot create temporary directory" "$KIND"
+		return 1
+	}
+
+	# Determine if it's a tar.gz archive.
+	if tar -tzf "$SRC" >/dev/null 2>&1; then
+		progress_command "tar -xzf $SRC -C $UNPACK_DIR"
+		if ! tar -xzf "$SRC" -C "$UNPACK_DIR" 2>/dev/null; then
+			rm -rf "$UNPACK_DIR"
+			json_detailed_error "archive_unpack_failed" "failed to unpack archive" "$KIND" "archive=$SRC"
+			return 1
+		fi
+		CANDIDATE="$(find "$UNPACK_DIR" -type f -name 'ddns-rs' 2>/dev/null | head -n 1)"
+		if [ -z "$CANDIDATE" ]; then
+			rm -rf "$UNPACK_DIR"
+			json_detailed_error "archive_no_binary" "archive does not contain a ddns-rs binary" "$KIND" "expected file: ddns-rs"
+			return 1
+		fi
+		SRC="$CANDIDATE"
+	fi
+
+	progress_command "validate binary $SRC"
+	if ! validate_elf "$SRC"; then
+		rm -rf "$UNPACK_DIR"
+		json_detailed_error "invalid_binary" "uploaded or downloaded file is not a valid ELF binary" "$KIND" "path=$SRC"
+		return 1
+	fi
+
+	progress_command "install -m 755 $SRC $BIN"
+	mkdir -p "$(dirname "$BIN")"
+	cp "$SRC" "$BIN" 2>/dev/null || {
+		rm -rf "$UNPACK_DIR"
+		json_detailed_error "install_failed" "failed to copy binary to $BIN" "$KIND"
+		return 1
+	}
+	chmod 755 "$BIN"
+	rm -rf "$UNPACK_DIR"
+
+	VER="$(binary_version)"
+	progress_log "success" "ddns-rs installed: $VER"
+	printf '{"ok":true,"action":"install","binary_path":'
+	json_string "$BIN"
+	printf ',"version":'
+	json_string "$VER"
+	printf '}\n'
+}
+
+install_from_url_locked() {
+	INPUT="$(cat)"
+	URL="$(input_value url "$INPUT")"
+	[ -n "$URL" ] || {
+		json_error "url_required" "URL is required"
+		return 1
+	}
+
+	progress_reset "install ddns-rs from URL"
+	progress_command "curl -fL -o $TMP_ROOT/ddns-rs-download.tmp $URL"
+
+	DL_FILE="$TMP_ROOT/ddns-rs-download.tmp"
+	rm -f "$DL_FILE"
+	if command -v curl >/dev/null 2>&1; then
+		if ! curl -fL --retry 3 --connect-timeout 15 -o "$DL_FILE" "$URL" 2>"$TMP_ROOT/ddns-rs-download.err"; then
+			ERR_DETAIL="$(head -n 3 "$TMP_ROOT/ddns-rs-download.err" 2>/dev/null | tr '\n' ' ')"
+			rm -f "$DL_FILE" "$TMP_ROOT/ddns-rs-download.err"
+			json_detailed_error "download_failed" "failed to download ddns-rs" "download_archive" "${ERR_DETAIL:-curl exit $?}"
+			return 1
+		fi
+	elif command -v wget >/dev/null 2>&1; then
+		if ! wget -qO "$DL_FILE" "$URL" 2>"$TMP_ROOT/ddns-rs-download.err"; then
+			ERR_DETAIL="$(head -n 3 "$TMP_ROOT/ddns-rs-download.err" 2>/dev/null | tr '\n' ' ')"
+			rm -f "$DL_FILE" "$TMP_ROOT/ddns-rs-download.err"
+			json_detailed_error "download_failed" "failed to download ddns-rs" "download_archive" "${ERR_DETAIL:-wget exit $?}"
+			return 1
+		fi
+	else
+		json_error "download_failed" "neither curl nor wget is available"
+		return 1
+	fi
+	rm -f "$TMP_ROOT/ddns-rs-download.err"
+
+	install_from_file "$DL_FILE" "download"
+	DL_RC="$?"
+	rm -f "$DL_FILE"
+	return "$DL_RC"
+}
+
+install_from_upload_locked() {
+	INPUT="$(cat)"
+	PATH_ARG="$(input_value path "$INPUT")"
+	[ -n "$PATH_ARG" ] || {
+		json_error "path_required" "upload path is required"
+		return 1
+	}
+
+	case "$PATH_ARG" in
+		/tmp/ddns-rs-upload-*)
+			;;
+		*)
+			json_detailed_error "invalid_upload_path" "uploaded file must be a readable /tmp/ddns-rs-upload-* file" "validate_uploaded_binary" "path=${PATH_ARG}"
+			return 1
+			;;
+	esac
+
+	[ -f "$PATH_ARG" ] || {
+		json_detailed_error "file_missing" "uploaded file not found" "validate_uploaded_binary" "path=$PATH_ARG"
+		return 1
+	}
+
+	progress_reset "install uploaded ddns-rs binary"
+	install_from_file "$PATH_ARG" "upload"
+}
+
+update_locked() {
+	progress_reset "update ddns-rs"
+
+	if binary_installed; then
+		progress_command "$BIN -u"
+		"$BIN" -u >"$TMP_ROOT/ddns-rs-update.log" 2>&1 || true
+		VER="$(binary_version)"
+		progress_log "success" "ddns-rs self-update finished, version: $VER"
+		printf '{"ok":true,"action":"update","version":'
+		json_string "$VER"
+		printf '}\n'
+		return 0
+	fi
+
+	REPO="${DDNS_RS_REPO:-$DEFAULT_REPO}"
+	VERSION="${DDNS_RS_VERSION:-$DEFAULT_VERSION}"
+	ARCH="$(detect_arch)"
+	[ -n "$ARCH" ] || {
+		json_detailed_error "unsupported_arch" "unsupported architecture" "update" "machine=$(uname -m)"
+		return 1
+	}
+
+	URL="https://github.com/${REPO}/releases/download/v${VERSION}/ddns-rs_${VERSION}_linux_${ARCH}.tar.gz"
+	progress_log "info" "ddns-rs not installed, downloading $VERSION ($ARCH)"
+	install_from_url_locked_inner "$URL"
+}
+
+# Reuse the download logic without re-reading stdin.
+install_from_url_locked_inner() {
+	URL="$1"
+	progress_command "curl -fL -o $TMP_ROOT/ddns-rs-download.tmp $URL"
+
+	DL_FILE="$TMP_ROOT/ddns-rs-download.tmp"
+	rm -f "$DL_FILE"
+	if command -v curl >/dev/null 2>&1; then
+		if ! curl -fL --retry 3 --connect-timeout 15 -o "$DL_FILE" "$URL" 2>"$TMP_ROOT/ddns-rs-download.err"; then
+			ERR_DETAIL="$(head -n 3 "$TMP_ROOT/ddns-rs-download.err" 2>/dev/null | tr '\n' ' ')"
+			rm -f "$DL_FILE" "$TMP_ROOT/ddns-rs-download.err"
+			json_detailed_error "download_failed" "failed to download ddns-rs" "download_archive" "${ERR_DETAIL:-curl exit $?}"
+			return 1
+		fi
+	else
+		json_error "download_failed" "curl is not available"
+		return 1
+	fi
+	rm -f "$TMP_ROOT/ddns-rs-download.err"
+
+	install_from_file "$DL_FILE" "download"
+	DL_RC="$?"
+	rm -f "$DL_FILE"
+	return "$DL_RC"
+}
+
+# ------------------------------------------------------------------ emit fns
+
+emit_status() {
+	printf '{"ok":true,'
+	printf '"binary":{'
+	printf '"installed":'
+	json_bool "$(binary_installed && echo 1 || echo 0)"
+	printf ',"version":'
+	json_string "$(binary_version)"
+	printf ',"path":'
+	json_string "$BIN"
+	printf '},'
+	printf '"service":{'
+	printf '"running":'
+	json_bool "$(service_running && echo 1 || echo 0)"
+	printf '}'
+	printf '}\n'
+}
+
+# Legacy method used by the config view: returns the installed version.
+emit_get_ver() {
+	if ! binary_installed; then
+		printf '{"ok":false,"ver":{},"error":"ddns-rs not found"}\n'
+		return 0
+	fi
+	printf '{"ok":true,"ver":{"version":'
+	json_string "$(binary_version)"
+	printf '}}\n'
+}
+
+# Legacy method used by the config view: runs the built-in self-update check.
+emit_last_update() {
+	if ! binary_installed; then
+		printf '{"ok":false,"update":{},"error":"ddns-rs not found"}\n'
+		return 0
+	fi
+
+	BEFORE="$(binary_version)"
+	OUT="$("$BIN" -u 2>&1 || true)"
+	AFTER="$(binary_version)"
+
+	STATUS="unknown"
+	MESSAGE="$OUT"
+
+	if [ -n "$BEFORE" ] && [ -n "$AFTER" ] && [ "$BEFORE" != "$AFTER" ]; then
+		STATUS="updated"
+		MESSAGE="Update successful: $BEFORE -> $AFTER"
+	elif printf '%s' "$OUT" | grep -qi "is the latest"; then
+		STATUS="latest"
+		MESSAGE="Already the latest version $AFTER"
+	elif printf '%s' "$OUT" | grep -qi "new version"; then
+		STATUS="update_available"
+		MESSAGE="New version available"
+	fi
+
+	printf '{"ok":true,"update":{'
+	printf '"status":'
+	json_string "$STATUS"
+	printf ',"has_update":'
+	if [ "$STATUS" = "update_available" ]; then printf 'true'; else printf 'false'; fi
+	printf ',"message":'
+	json_string "$MESSAGE"
+	printf ',"current_version":'
+	json_string "$BEFORE"
+	printf ',"latest_version":'
+	json_string "$AFTER"
+	printf '}}\n'
+}
+
+emit_progress() {
+	printf '{"ok":true,"path":'
+	json_string "$PROGRESS_LOG"
+	printf ',"text":'
+	json_file_string "$PROGRESS_LOG"
+	printf '}\n'
+}
+
+# ------------------------------------------------------------------- dispatch
+
+case "${1:-}" in
+	list)
+		printf '{'
+		printf '"status":{},'
+		printf '"binary_install":{"url":"string"},'
+		printf '"binary_upload":{"path":"string"},'
+		printf '"binary_update":{},'
+		printf '"binary_progress":{},'
+		printf '"get_ver":{},'
+		printf '"last_update":{}'
+		printf '}\n'
+		;;
+	call)
+		case "${2:-}" in
+			status)
+				emit_status
+				;;
+			binary_install)
+				run_locked install_from_url_locked
+				;;
+			binary_upload)
+				run_locked install_from_upload_locked
+				;;
+			binary_update)
+				run_locked update_locked
+				;;
+			binary_progress)
+				emit_progress
+				;;
+			get_ver)
+				emit_get_ver
+				;;
+			last_update)
+				emit_last_update
+				;;
+			*)
+				printf '{"ok":false,"error":"unknown method"}\n'
+				exit 1
+				;;
+		esac
+		;;
+	*)
+		printf '{"ok":false,"error":"usage: luci.ddns-rs list|call <method>"}\n'
+		exit 1
+		;;
+esac
+exit 0
