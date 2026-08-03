@@ -83,8 +83,6 @@ jobs:
     name: Publish release + Docker
     runs-on: ubuntu-latest
     needs: build
-    env:
-      HAS_DOCKER_SECRETS: ${{ secrets.DOCKER_USERNAME != '' }}
     steps:
       - name: Checkout
         uses: actions/checkout@v7
@@ -106,39 +104,38 @@ jobs:
           files: dist/*
           draft: false
 
-      - name: Set up QEMU
-        if: env.HAS_DOCKER_SECRETS == 'true'
-        uses: docker/setup-qemu-action@v4
-
-      - name: Set up Docker Buildx
-        if: env.HAS_DOCKER_SECRETS == 'true'
-        uses: docker/setup-buildx-action@v4
-
-      - name: Login to Docker Hub
-        if: env.HAS_DOCKER_SECRETS == 'true'
-        uses: docker/login-action@v4
-        with:
-          username: ${{ secrets.DOCKER_USERNAME }}
-          password: ${{ secrets.DOCKER_PASSWORD }}
-
-      - name: Login to GitHub Container Registry
-        if: env.HAS_DOCKER_SECRETS == 'true'
-        uses: docker/login-action@v4
-        with:
-          registry: ghcr.io
-          username: ${{ github.actor }}
-          password: ${{ secrets.GITHUB_TOKEN }}
-
-      - name: Build and push Docker image
-        if: env.HAS_DOCKER_SECRETS == 'true'
-        uses: docker/build-push-action@v6
-        with:
-          context: .
-          file: Dockerfile
-          platforms: linux/amd64,linux/arm64,linux/arm/v7,linux/riscv64
-          push: true
-          tags: |
-            ${{ secrets.DOCKER_USERNAME }}/ddns-rs:${{ github.ref_name }}
-            ${{ secrets.DOCKER_USERNAME }}/ddns-rs:latest
-            ghcr.io/${{ github.repository_owner }}/ddns-rs:${{ github.ref_name }}
-            ghcr.io/${{ github.repository_owner }}/ddns-rs:latest
+      # Docker publish is disabled for now (requires DOCKER_USERNAME /
+      # DOCKER_PASSWORD secrets). Re-enable once the repo has Docker Hub
+      # credentials configured.
+      #
+      # - name: Set up QEMU
+      #   uses: docker/setup-qemu-action@v4
+      #
+      # - name: Set up Docker Buildx
+      #   uses: docker/setup-buildx-action@v4
+      #
+      # - name: Login to Docker Hub
+      #   uses: docker/login-action@v4
+      #   with:
+      #     username: ${{ secrets.DOCKER_USERNAME }}
+      #     password: ${{ secrets.DOCKER_PASSWORD }}
+      #
+      # - name: Login to GitHub Container Registry
+      #   uses: docker/login-action@v4
+      #   with:
+      #     registry: ghcr.io
+      #     username: ${{ github.actor }}
+      #     password: ${{ secrets.GITHUB_TOKEN }}
+      #
+      # - name: Build and push Docker image
+      #   uses: docker/build-push-action@v6
+      #   with:
+      #     context: .
+      #     file: Dockerfile
+      #     platforms: linux/amd64,linux/arm64,linux/arm/v7,linux/riscv64
+      #     push: true
+      #     tags: |
+      #       ${{ secrets.DOCKER_USERNAME }}/ddns-rs:${{ github.ref_name }}
+      #       ${{ secrets.DOCKER_USERNAME }}/ddns-rs:latest
+      #       ghcr.io/${{ github.repository_owner }}/ddns-rs:${{ github.ref_name }}
+      #       ghcr.io/${{ github.repository_owner }}/ddns-rs:latest
