@@ -18,11 +18,58 @@ var callInstall = rpc.declare({
     expect: {}
 });
 
+var callUpload = rpc.declare({
+    object: 'luci.ddns-rs',
+    method: 'binary_upload',
+    expect: {}
+});
+
 var callUpdate = rpc.declare({
     object: 'luci.ddns-rs',
     method: 'binary_update',
     expect: {}
 });
+
+function notifyOk(msg) {
+    ui.addNotification(null, E('p', {}, msg));
+}
+
+function notifyErr(msg) {
+    ui.addNotification(null, E('p', { 'style': 'color: red' }, msg));
+}
+
+function runInstall(promise, btn) {
+    if (btn)
+        btn.disabled = true;
+    return promise.then(function(res) {
+        var text = (res && res.result) ? res.result : _('Install failed');
+        if (text.match(/failed|invalid|error/i))
+            notifyErr(text);
+        else
+            notifyOk(text);
+        refreshStatus();
+    }).catch(function(e) {
+        notifyErr(_('Install failed: %s').replace('%s', e));
+    }).finally(function() {
+        if (btn)
+            btn.disabled = false;
+    });
+}
+
+function refreshStatus() {
+    callService().then(function(res) {
+        var el = document.getElementById('ddns-rs-status');
+        if (!el)
+            return;
+        var statusText = (res && res.status === 'installed') ? _('Installed') : _('Not installed');
+        var verText = (res && res.version && res.version !== 'not-installed') ? res.version : '';
+        el.innerHTML = '<strong>' + statusText + '</strong>' + (verText ? ' — ' + verText : '');
+    }).catch(function() {
+        var el = document.getElementById('ddns-rs-status');
+        if (el)
+            el.innerHTML = _('Status check error');
+    });
+}
 
 return view.extend({
     render: function() {
@@ -36,10 +83,41 @@ return view.extend({
             E('div', { 'id': 'ddns-rs-status', 'class': 'cbi-value' }, _('Loading...'))
         ]);
 
+        // Upload from local file card
+        var uploadBtn = E('button', {
+            'class': 'btn cbi-button-action',
+            'click': function() {
+                var uploadPath = '/tmp/ddns-rs-upload-%d'.format(Date.now());
+                uploadBtn.disabled = true;
+                ui.uploadFile(uploadPath).then(function() {
+                    return callUpload({ path: uploadPath });
+                }).then(function(res) {
+                    var text = (res && res.result) ? res.result : _('Install failed');
+                    if (text.match(/failed|invalid|error/i))
+                        notifyErr(text);
+                    else
+                        notifyOk(text);
+                    refreshStatus();
+                }).catch(function(e) {
+                    notifyErr(_('Upload failed: %s').replace('%s', e));
+                }).finally(function() {
+                    uploadBtn.disabled = false;
+                });
+            }
+        }, _('Upload & Install'));
+
+        var uploadCard = E('div', { 'class': 'cbi-section' }, [
+            E('h3', {}, _('Install Binary')),
+            E('p', {}, _('Upload a ddns-rs binary or .tar.gz archive, or enter a direct download URL below.')),
+            E('div', { 'class': 'cbi-value' }, [ uploadBtn ])
+        ]);
+
         // Install from URL card
         var urlInput = E('input', {
             'type': 'text',
+            'id': 'ddns-rs-url',
             'class': 'cbi-input-text',
+            'style': 'width: 100%; margin-bottom: 5px',
             'placeholder': 'https://github.com/jeessy2/ddns-rs/releases/...'
         });
         var installBtn = E('button', {
@@ -47,20 +125,15 @@ return view.extend({
             'click': function() {
                 var url = urlInput.value.trim();
                 if (!url) {
-                    ui.addNotification(null, E('p', {}, _('Please enter a download URL')));
+                    notifyErr(_('Please enter a download URL'));
                     return;
                 }
-                installBtn.disabled = true;
-                callInstall({ url: url }).then(function(res) {
-                    ui.addNotification(null, E('p', {}, res.result));
-                    installBtn.disabled = false;
-                    self.refreshStatus();
-                });
+                runInstall(callInstall({ url: url }), installBtn);
             }
         }, _('Install from URL'));
 
         var installCard = E('div', { 'class': 'cbi-section' }, [
-            E('h3', {}, _('Install Binary')),
+            E('h3', {}, _('Install from URL')),
             E('p', {}, _('Enter a direct download URL of the ddns-rs binary or .tar.gz archive.')),
             E('div', { 'class': 'cbi-value' }, [ urlInput, installBtn ])
         ]);
@@ -69,12 +142,7 @@ return view.extend({
         var updateBtn = E('button', {
             'class': 'btn cbi-button-action',
             'click': function() {
-                updateBtn.disabled = true;
-                callUpdate().then(function(res) {
-                    ui.addNotification(null, E('p', {}, res.result));
-                    updateBtn.disabled = false;
-                    self.refreshStatus();
-                });
+                runInstall(callUpdate(), updateBtn);
             }
         }, _('Auto Install/Update'));
 
@@ -86,20 +154,11 @@ return view.extend({
         ]);
 
         container.appendChild(statusCard);
+        container.appendChild(uploadCard);
         container.appendChild(installCard);
         container.appendChild(updateCard);
 
-        this.refreshStatus = function() {
-            callService().then(function(res) {
-                var el = document.getElementById('ddns-rs-status');
-                if (el) {
-                    var statusText = res.status === 'installed' ? _('Installed') : _('Not installed');
-                    var verText = res.version && res.version !== 'not-installed' ? res.version : '';
-                    el.innerHTML = '<strong>' + statusText + '</strong>' + (verText ? ' — ' + verText : '');
-                }
-            });
-        };
-
+        this.refreshStatus = refreshStatus;
         this.refreshStatus();
         return container;
     }

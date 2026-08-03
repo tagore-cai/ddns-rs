@@ -69,6 +69,22 @@ const methods = {
 		}
 	},
 
+	binary_upload: {
+		call: function(arg) {
+			let path = (arg && arg.path) ? arg.path : '';
+			// Only accept files uploaded to /tmp by the LuCI frontend.
+			if (!path || match(path, /(^|\/)\.\.(\/|$)/) || !match(path, /^\/tmp\/[A-Za-z0-9._-]+$/))
+				return { result: 'invalid upload path' };
+			const fd = popen(`/usr/libexec/ddns-rs-binary install-file '${replace(path, "'", "'\\''")}'`);
+			if (fd) {
+				let out = fd.read('all');
+				fd.close();
+				return { result: trim(out) };
+			}
+			return { result: 'failed to run install-file' };
+		}
+	},
+
 	binary_update: {
 		call: function() {
 			const fd = popen('/usr/libexec/ddns-rs-binary update');

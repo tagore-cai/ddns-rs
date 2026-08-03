@@ -5,11 +5,12 @@
 # the ddns-rs binary (the package itself does not bundle it).
 #
 # Usage:
-#   ddns-rs-binary status          - check if binary is installed
-#   ddns-rs-binary install <url>   - download binary from a URL
-#   ddns-rs-binary update          - self-update via ddns-rs -u
-#   ddns-rs-binary version         - print current version
-#   ddns-rs-binary path            - print binary path
+#   ddns-rs-binary status           - check if binary is installed
+#   ddns-rs-binary install <url>    - download binary from a URL
+#   ddns-rs-binary install-file <p> - install binary from a local file
+#   ddns-rs-binary update           - self-update via ddns-rs -u
+#   ddns-rs-binary version          - print current version
+#   ddns-rs-binary path             - print binary path
 
 BIN=/usr/bin/ddns-rs
 TMP=/tmp/ddns-rs-binary.tmp
@@ -35,32 +36,52 @@ version() {
     fi
 }
 
+# Install from a local file (either a raw ELF binary or a tar.gz archive).
+# Works with POSIX ash on OpenWrt (no bashisms).
+install_file() {
+    local src="$1"
+    local extract_dir found
+    [ -n "$src" ] && [ -f "$src" ] || { echo "file not found"; exit 1; }
+
+    # Direct ELF binary? Check the 4-byte ELF magic with od (busybox-safe).
+    if [ "$(head -c 4 "$src" 2>/dev/null | od -An -tx1 | tr -d ' \n')" = "7f454c46" ]; then
+        mv -f "$src" "$BIN" || { echo "install failed"; exit 1; }
+        chmod 755 "$BIN"
+        log "ddns-rs installed: $("$BIN" -v)"
+        return 0
+    fi
+
+    # Otherwise try to extract ddns-rs from a tar.gz archive.
+    extract_dir="$(mktemp -d 2>/dev/null)"
+    [ -n "$extract_dir" ] || extract_dir="/tmp/ddns-rs-extract.$$"
+    mkdir -p "$extract_dir"
+    if tar -xzf "$src" -C "$extract_dir" 2>/dev/null; then
+        found="$(find "$extract_dir" -type f -name 'ddns-rs' 2>/dev/null | head -n 1)"
+        if [ -n "$found" ]; then
+            mv -f "$found" "$BIN" || { rm -rf "$extract_dir"; echo "install failed"; exit 1; }
+            chmod 755 "$BIN"
+            rm -rf "$extract_dir"
+            log "ddns-rs installed: $("$BIN" -v)"
+            return 0
+        fi
+    fi
+    rm -rf "$extract_dir"
+    echo "invalid binary or archive"
+    exit 1
+}
+
 install_from_url() {
     local url="$1"
     [ -n "$url" ] || { echo "URL is empty"; exit 1; }
 
     log "Downloading ddns-rs from $url"
-    curl -fL --retry 3 -o "$TMP" "$url" || { echo "download failed"; exit 1; }
-
-    # Validate it is an executable binary
-    if ! head -c 4 "$TMP" | grep -q $'\x7fELF'; then
-        # Possibly a tar.gz archive; try to extract
-        if tar -tzf "$TMP" ddns-rs >/dev/null 2>&1; then
-            local extract_dir=$(mktemp -d)
-            tar -xzf "$TMP" -C "$extract_dir" ddns-rs || { echo "extract failed"; rm -rf "$extract_dir"; exit 1; }
-            mv "$extract_dir/ddns-rs" "$BIN"
-            rm -rf "$extract_dir"
-        else
-            echo "invalid binary or archive"
-            rm -f "$TMP"
-            exit 1
-        fi
-    else
-        mv "$TMP" "$BIN"
-    fi
-    chmod 755 "$BIN"
+    curl -fL --retry 3 --connect-timeout 15 -o "$TMP" "$url" || {
+        echo "download failed"
+        rm -f "$TMP"
+        exit 1
+    }
+    install_file "$TMP"
     rm -f "$TMP"
-    log "ddns-rs installed: $("$BIN" -v)"
 }
 
 update() {
@@ -104,8 +125,9 @@ case "$1" in
     status)     status ;;
     version)    version ;;
     install)    install_from_url "$2" ;;
+    install-file) install_file "$2" ;;
     update)     update ;;
     path)       echo "$BIN" ;;
-    *)          echo "Usage: $0 {status|version|install <url>|update|path}" ;;
+    *)          echo "Usage: $0 {status|version|install <url>|install-file <path>|update|path}" ;;
 esac
 exit 0

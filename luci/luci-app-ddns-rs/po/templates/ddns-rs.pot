@@ -3,19 +3,43 @@ msgstr ""
 "Content-Type: text/plain; charset=UTF-8\n"
 "Project-Id-Version: ddns-rs\n"
 
+msgid "Install failed"
+msgstr ""
+
+msgid "Install failed: %s"
+msgstr ""
+
+msgid "Installed"
+msgstr ""
+
+msgid "Not installed"
+msgstr ""
+
+msgid "Status check error"
+msgstr ""
+
 msgid "DDNS-RS Binary Status"
 msgstr ""
 
 msgid "Loading..."
 msgstr ""
 
+msgid "Upload failed: %s"
+msgstr ""
+
+msgid "Upload & Install"
+msgstr ""
+
+msgid "Install Binary"
+msgstr ""
+
+msgid "Upload a ddns-rs binary or .tar.gz archive, or enter a direct download URL below."
+msgstr ""
+
 msgid "Please enter a download URL"
 msgstr ""
 
 msgid "Install from URL"
-msgstr ""
-
-msgid "Install Binary"
 msgstr ""
 
 msgid "Enter a direct download URL of the ddns-rs binary or .tar.gz archive."
@@ -28,12 +52,6 @@ msgid "Auto Install / Update"
 msgstr ""
 
 msgid "If the binary is missing, it will be downloaded from the default release. If installed, it will check for the latest version and update automatically."
-msgstr ""
-
-msgid "Installed"
-msgstr ""
-
-msgid "Not installed"
 msgstr ""
 
 msgid "Already the latest version"
@@ -130,9 +148,6 @@ msgid "DDNS-RS automatically obtains your public IPv4 or IPv6 address and resolv
 msgstr ""
 
 msgid "Checking status..."
-msgstr ""
-
-msgid "Status check error"
 msgstr ""
 
 msgid "Enable"
