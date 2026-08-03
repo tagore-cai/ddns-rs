@@ -9,6 +9,15 @@ msgstr ""
 msgid "Install failed: %s"
 msgstr ""
 
+msgid "Please select a file to upload"
+msgstr ""
+
+msgid "HTTP error"
+msgstr ""
+
+msgid "Network error"
+msgstr ""
+
 msgid "Installed"
 msgstr ""
 

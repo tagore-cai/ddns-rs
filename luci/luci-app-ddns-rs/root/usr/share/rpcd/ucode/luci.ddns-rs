@@ -74,7 +74,9 @@ const methods = {
 			let path = (arg && arg.path) ? arg.path : '';
 			// Only accept files uploaded to /tmp by the LuCI frontend.
 			if (!path || match(path, /(^|\/)\.\.(\/|$)/) || !match(path, /^\/tmp\/[A-Za-z0-9._-]+$/))
-				return { result: 'invalid upload path' };
+				return { result: 'invalid upload path: ' + (path || '(empty)') };
+			if (!access(path))
+				return { result: 'uploaded file not found: ' + path };
 			const fd = popen(`/usr/libexec/ddns-rs-binary install-file '${replace(path, "'", "'\\''")}' 2>&1`);
 			if (fd) {
 				let out = trim(fd.read('all'));

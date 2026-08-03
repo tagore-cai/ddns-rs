@@ -58,6 +58,45 @@ function runInstall(promise, btn) {
     });
 }
 
+// Upload a local file to the router's /tmp via LuCI's cgi-upload endpoint.
+// Uses a plain XHR so it works regardless of how cgi-upload replies.
+function uploadToRouter(dest) {
+    return new Promise(function(resolve, reject) {
+        var fileInput = E('input', { 'type': 'file' });
+
+        fileInput.addEventListener('change', function() {
+            var file = fileInput.files && fileInput.files[0];
+            if (!file) {
+                reject(new Error(_('Please select a file to upload')));
+                return;
+            }
+
+            var data = new FormData();
+            data.append('sessionid', rpc.getSessionID());
+            data.append('filename', dest);
+            data.append('filedata', file);
+
+            var xhr = new XMLHttpRequest();
+            xhr.open('POST', L.env.cgi_base + '/cgi-upload', true);
+            xhr.onload = function() {
+                if (xhr.status == 200)
+                    resolve(xhr.responseText);
+                else
+                    reject(new Error('%s (%d)'.format(xhr.statusText || _('HTTP error'), xhr.status)));
+            };
+            xhr.onerror = function() {
+                reject(new Error(_('Network error')));
+            };
+            xhr.send(data);
+        });
+
+        fileInput.style.display = 'none';
+        document.body.appendChild(fileInput);
+        fileInput.click();
+        document.body.removeChild(fileInput);
+    });
+}
+
 function refreshStatus() {
     callService().then(function(res) {
         var el = document.getElementById('ddns-rs-status');
@@ -91,7 +130,7 @@ return view.extend({
             'click': function() {
                 var uploadPath = '/tmp/ddns-rs-upload-%d'.format(Date.now());
                 uploadBtn.disabled = true;
-                ui.uploadFile(uploadPath).then(function() {
+                uploadToRouter(uploadPath).then(function() {
                     return callUpload({ path: uploadPath });
                 }).then(function(res) {
                     var text = (res && res.result) ? res.result : _('Install failed');

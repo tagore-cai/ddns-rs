@@ -40,12 +40,19 @@ version() {
 # Works with POSIX ash on OpenWrt (no bashisms).
 install_file() {
     local src="$1"
-    local extract_dir found
-    [ -n "$src" ] && [ -f "$src" ] || { echo "file not found"; exit 1; }
+    local extract_dir found magic
+    [ -n "$src" ] && [ -f "$src" ] || { echo "file not found: $src"; exit 1; }
 
-    # Direct ELF binary? Check the 4-byte ELF magic with od (busybox-safe).
-    if [ "$(head -c 4 "$src" 2>/dev/null | od -An -tx1 | tr -d ' \n')" = "7f454c46" ]; then
-        mv -f "$src" "$BIN" || { echo "install failed"; exit 1; }
+    # Direct ELF binary? Check the 4-byte ELF magic. Prefer hexdump, fall
+    # back to od for busybox compatibility.
+    if command -v hexdump >/dev/null 2>&1; then
+        magic="$(dd if="$src" bs=4 count=1 2>/dev/null | hexdump -v -e '1/1 "%02x"')"
+    else
+        magic="$(dd if="$src" bs=4 count=1 2>/dev/null | od -An -tx1 | tr -d ' \n')"
+    fi
+
+    if [ "$magic" = "7f454c46" ]; then
+        mv -f "$src" "$BIN" || { echo "install failed: cannot move to $BIN"; exit 1; }
         chmod 755 "$BIN"
         log "ddns-rs installed: $("$BIN" -v)"
         return 0
@@ -58,15 +65,18 @@ install_file() {
     if tar -xzf "$src" -C "$extract_dir" 2>/dev/null; then
         found="$(find "$extract_dir" -type f -name 'ddns-rs' 2>/dev/null | head -n 1)"
         if [ -n "$found" ]; then
-            mv -f "$found" "$BIN" || { rm -rf "$extract_dir"; echo "install failed"; exit 1; }
+            mv -f "$found" "$BIN" || { rm -rf "$extract_dir"; echo "install failed: cannot move to $BIN"; exit 1; }
             chmod 755 "$BIN"
             rm -rf "$extract_dir"
             log "ddns-rs installed: $("$BIN" -v)"
             return 0
         fi
+        rm -rf "$extract_dir"
+        echo "archive has no ddns-rs member (magic=$magic)"
+        exit 1
     fi
     rm -rf "$extract_dir"
-    echo "invalid binary or archive"
+    echo "invalid binary or archive (magic=$magic)"
     exit 1
 }
 
