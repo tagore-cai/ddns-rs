@@ -40,14 +40,6 @@ jobs:
             os: darwin
             arch: arm64
             runner: macos-latest
-          - target: x86_64-pc-windows-msvc
-            os: windows
-            arch: x86_64
-            runner: windows-latest
-          - target: aarch64-pc-windows-gnullvm
-            os: windows
-            arch: arm64
-            runner: ubuntu-latest
     runs-on: ${{ matrix.runner }}
     steps:
       - name: Checkout
@@ -77,13 +69,7 @@ jobs:
           VERSION="${VERSION#v}"
           BASE="ddns-rs_${VERSION}_${{ matrix.os }}_${{ matrix.arch }}"
           cd "target/${{ matrix.target }}/release"
-          if [ "${{ matrix.os }}" = "windows" ]; then
-            mv ddns-rs.exe ddns-rs
-            tar -czf "${BASE}.tar.gz" ddns-rs
-            mv ddns-rs ddns-rs.exe
-          else
-            tar -czf "${BASE}.tar.gz" ddns-rs
-          fi
+          tar -czf "${BASE}.tar.gz" ddns-rs
           mv "${BASE}.tar.gz" "${GITHUB_WORKSPACE}/"
           cd -
 
