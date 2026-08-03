@@ -1,0 +1,38 @@
+{
+	"luci-app-ddns-rs": {
+		"description": "Grant UCI access for luci-app-ddns-rs",
+		"read": {
+			"uci": [ "ddns-rs" ],
+			"file": {
+				"/etc/init.d/ddns-rs": [ "exec" ],
+				"/usr/libexec/ddns-rs-call": [ "exec" ],
+				"/usr/libexec/ddns-rs-binary": [ "exec" ],
+				"/usr/share/rpcd/ucode/luci.ddns-rs": [ "exec" ],
+				"/bin/pidof": [ "exec" ],
+				"/bin/ps": [ "exec" ],
+				"/bin/ash": [ "exec" ],
+				"/usr/bin/ddns-rs": [ "exec" ],
+				"/etc/ddns-rs/ddns-rs-config.yaml": [ "read" ],
+				"/var/log/*": [ "read" ],
+				"/bin/logread": [ "exec" ]
+			},
+			"ubus": {
+				"rc": [ "*" ],
+				"service": [ "list" ],
+				"luci.ddns-rs": [ "*" ],
+				"network.interface.*": [ "status" ],
+				"network": [ "*" ]
+			}
+		},
+		"write": {
+			"uci": [ "ddns-rs" ],
+			"file": {
+				"/etc/ddns-rs/ddns-rs-config.yaml": [ "write" ],
+				"/usr/bin/ddns-rs": [ "write" ]
+			},
+			"ubus": {
+				"luci.ddns-rs": [ "*" ]
+			}
+		}
+	}
+}

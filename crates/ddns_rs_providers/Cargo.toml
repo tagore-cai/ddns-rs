@@ -1,0 +1,24 @@
+[package]
+name = "ddns-rs-providers"
+description = "Concrete DNS provider implementations for ddns-go"
+version.workspace = true
+edition.workspace = true
+license.workspace = true
+
+[dependencies]
+ddns-rs-core = { path = "../ddns_rs_core" }
+serde.workspace = true
+serde_json.workspace = true
+tokio.workspace = true
+reqwest.workspace = true
+jiff.workspace = true
+url.workspace = true
+base64.workspace = true
+hmac.workspace = true
+sha1.workspace = true
+sha2.workspace = true
+hex.workspace = true
+percent-encoding.workspace = true
+async-trait.workspace = true
+idna.workspace = true
+roxmltree.workspace = true

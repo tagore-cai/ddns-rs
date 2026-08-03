@@ -1,0 +1,43 @@
+[workspace]
+resolver = "2"
+members = [
+    "crates/ddns_rs_core",
+    "crates/ddns_rs_providers",
+    "crates/ddns_rs_web",
+    "crates/ddns_rs_cli",
+]
+
+[workspace.package]
+version = "0.1.0"
+edition = "2021"
+license = "MIT"
+
+[workspace.dependencies]
+anyhow = "1"
+serde = { version = "1", features = ["derive"] }
+serde_json = "1"
+serde_yaml = "0.9"
+tokio = { version = "1", features = ["rt-multi-thread", "macros", "net", "time", "sync", "io-util", "signal"] }
+reqwest = { version = "0.12", default-features = false, features = ["rustls-tls", "json", "stream"] }
+jiff = "0.2"
+regex = "1"
+url = "2"
+base64 = "0.23"
+hmac = "0.13"
+sha1 = "0.11"
+sha2 = "0.11"
+hex = "0.4"
+rand = "0.10"
+percent-encoding = "2"
+async-trait = "0.1"
+idna = "1"
+psl = "2"
+hickory-resolver = "0.24"
+get_if_addrs = "0.5"
+roxmltree = "0.20"
+
+[profile.release]
+lto = "fat"
+strip = true
+codegen-units = 1
+panic = "abort"

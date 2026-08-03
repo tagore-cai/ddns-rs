@@ -1,0 +1,64 @@
+name: openwrt
+
+# Build OpenWrt ipk/apk packages for ddns-rs.
+# The ddns-rs package is architecture-independent (PKGARCH=all): it ships only
+# the init script, config and the binary-manager helper. The ddns-rs binary
+# itself is installed via the LuCI "Binary" page or `ddns-rs -u` self-update,
+# so there is no per-arch binary to bundle.
+# - openwrt-24.10 SDK produces .ipk (opkg)
+# - openwrt-25.12 SDK produces .apk (OpenWrt 25.x apk package manager)
+
+on:
+  workflow_dispatch:
+  push:
+    branches:
+      - master
+    paths:
+      - 'luci/**'
+
+jobs:
+  build:
+    name: Build ${{ matrix.sdk }}
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        sdk:
+          - openwrt-24.10
+          - openwrt-25.12
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v7
+
+      - name: Build OpenWrt packages
+        uses: openwrt/gh-action-sdk@v6
+        env:
+          ARCH: x86_64-${{ matrix.sdk }}
+          # luci/ is the feed root containing ddns-rs and luci-app-ddns-rs
+          FEED_DIR: ${{ github.workspace }}/luci
+          FEEDNAME: packages_ci
+          PACKAGES: ddns-rs luci-app-ddns-rs
+          NO_REFRESH_CHECK: true
+          INDEX: 1
+
+      - name: Upload artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: ${{ matrix.sdk }}
+          path: |
+            bin/packages/x86_64/packages_ci/*.apk
+            bin/packages/x86_64/packages_ci/*.ipk
+
+      - name: Package release archive
+        run: |
+          tar -zcvf ${{ matrix.sdk }}.tar.gz -C bin/packages/x86_64/ packages_ci
+
+      - name: Upload to release
+        uses: ncipollo/release-action@v1
+        with:
+          tag: ${{ github.ref_name }}
+          token: ${{ secrets.GITHUB_TOKEN }}
+          allowUpdates: true
+          replacesArtifacts: true
+          artifacts: "${{ matrix.sdk }}.tar.gz"

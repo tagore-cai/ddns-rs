@@ -1,0 +1,33 @@
+[package]
+name = "ddns-rs-cli"
+description = "ddns-go command line entry point"
+version.workspace = true
+edition.workspace = true
+license.workspace = true
+
+[[bin]]
+name = "ddns-rs"
+path = "src/main.rs"
+
+[features]
+default = ["self-update"]
+# Compile the ddns-rs -u self-update feature (downloads new releases from GitHub).
+# Disabling it removes the semver/flate2/tar/zip dependencies and shrinks the binary.
+self-update = ["dep:semver", "dep:flate2", "dep:tar", "dep:zip"]
+
+[dependencies]
+ddns-rs-core = { path = "../ddns_rs_core" }
+ddns-rs-providers = { path = "../ddns_rs_providers" }
+ddns-rs-web = { path = "../ddns_rs_web" }
+anyhow.workspace = true
+clap = { version = "4", features = ["derive"] }
+tokio.workspace = true
+serde_json.workspace = true
+serde.workspace = true
+reqwest.workspace = true
+daemonize = "0.5"
+jiff.workspace = true
+semver = { version = "1", optional = true }
+flate2 = { version = "1", optional = true }
+tar = { version = "0.4", optional = true }
+zip = { version = "8", default-features = false, features = ["deflate"], optional = true }

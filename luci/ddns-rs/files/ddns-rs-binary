@@ -1,0 +1,111 @@
+#!/bin/sh
+# SPDX-License-Identifier: GPL-3.0-only
+#
+# ddns-rs binary manager - used by the LuCI interface to install/update
+# the ddns-rs binary (the package itself does not bundle it).
+#
+# Usage:
+#   ddns-rs-binary status          - check if binary is installed
+#   ddns-rs-binary install <url>   - download binary from a URL
+#   ddns-rs-binary update          - self-update via ddns-rs -u
+#   ddns-rs-binary version         - print current version
+#   ddns-rs-binary path            - print binary path
+
+BIN=/usr/bin/ddns-rs
+TMP=/tmp/ddns-rs-binary.tmp
+
+log() {
+    logger -t ddns-rs "$1"
+    echo "$1"
+}
+
+status() {
+    if [ -x "$BIN" ]; then
+        echo "installed"
+    else
+        echo "not-installed"
+    fi
+}
+
+version() {
+    if [ -x "$BIN" ]; then
+        "$BIN" -v 2>/dev/null || echo "unknown"
+    else
+        echo "not-installed"
+    fi
+}
+
+install_from_url() {
+    local url="$1"
+    [ -n "$url" ] || { echo "URL is empty"; exit 1; }
+
+    log "Downloading ddns-rs from $url"
+    curl -fL --retry 3 -o "$TMP" "$url" || { echo "download failed"; exit 1; }
+
+    # Validate it is an executable binary
+    if ! head -c 4 "$TMP" | grep -q $'\x7fELF'; then
+        # Possibly a tar.gz archive; try to extract
+        if tar -tzf "$TMP" ddns-rs >/dev/null 2>&1; then
+            local extract_dir=$(mktemp -d)
+            tar -xzf "$TMP" -C "$extract_dir" ddns-rs || { echo "extract failed"; rm -rf "$extract_dir"; exit 1; }
+            mv "$extract_dir/ddns-rs" "$BIN"
+            rm -rf "$extract_dir"
+        else
+            echo "invalid binary or archive"
+            rm -f "$TMP"
+            exit 1
+        fi
+    else
+        mv "$TMP" "$BIN"
+    fi
+    chmod 755 "$BIN"
+    rm -f "$TMP"
+    log "ddns-rs installed: $("$BIN" -v)"
+}
+
+update() {
+    if [ -x "$BIN" ]; then
+        log "Running ddns-rs self-update"
+        "$BIN" -u
+    else
+        log "ddns-rs not installed, downloading from default release"
+        install_default
+    fi
+}
+
+# Determine the Linux arch suffix used by ddns-rs release naming.
+detect_arch() {
+    case "$(uname -m)" in
+        x86_64)   echo "x86_64" ;;
+        aarch64)  echo "arm64" ;;
+        armv7l|armv7) echo "armv7" ;;
+        riscv64)  echo "riscv64" ;;
+        *)        echo "" ;;
+    esac
+}
+
+# Download the latest release binary from the default GitHub repo.
+install_default() {
+    local arch=$(detect_arch)
+    [ -n "$arch" ] || { echo "unsupported architecture: $(uname -m)"; exit 1; }
+
+    # Resolve latest version via GitHub API
+    local repo="${DDNS_RS_REPO:-jeessy2/ddns-rs}"
+    local latest=$(curl -fsSL "https://api.github.com/repos/${repo}/releases/latest" 2>/dev/null \
+        | grep '"tag_name"' | head -1 | sed -E 's/.*"v?([^"]+)".*/\1/')
+    [ -n "$latest" ] || { echo "cannot determine latest version"; exit 1; }
+
+    local url="https://github.com/${repo}/releases/download/v${latest}/ddns-rs_${latest}_linux_${arch}.tar.gz"
+    log "Downloading ddns-rs ${latest} (${arch})"
+    install_from_url "$url"
+}
+
+case "$1" in
+    status)     status ;;
+    version)    version ;;
+    install)    install_from_url "$2" ;;
+    update)     update ;;
+    path)       echo "$BIN" ;;
+    *)          echo "Usage: $0 {status|version|install <url>|update|path}" ;;
+esac
+exit 0
