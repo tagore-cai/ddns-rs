@@ -71,10 +71,10 @@ docker run -d --name ddns-rs --restart=always \
 DDNS-RS 提供 LuCI 插件，支持 OpenWrt 24.10（ipk）与 25.x（apk）。
 
 - 从 [Releases](https://github.com/jeessy2/ddns-rs/releases) 下载 `openwrt-*.tar.gz`
-- 在 OpenWrt 中安装对应架构的包：`opkg install ddns-rs_*.ipk` / `apk add ddns-rs_*.apk`
-- 安装 `luci-app-ddns-rs` 包后，在 LuCI 的 **Services → DDNS-RS** 中配置
+- 安装 `luci-app-ddns-rs` 包：`opkg install luci-app-ddns-rs_*.ipk` / `apk add luci-app-ddns-rs_*.apk`
+- 安装后，在 LuCI 的 **Services → DDNS-RS** 中配置
 
-> DDNS-RS 的包**不含二进制**。安装后请在 LuCI 的 **Binary** 页面通过上传、自定义链接或一键自动更新安装 ddns-rs 二进制，这样更新 ddns-rs 无需重装 LuCI 包。
+> DDNS-RS 的 LuCI 包**不含二进制**。安装后请在 LuCI 的 **Binary** 页面通过上传、自定义链接或一键自动更新安装 ddns-rs 二进制，这样更新 ddns-rs 无需重装 LuCI 包。
 
 ## CLI 参数
 

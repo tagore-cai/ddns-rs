@@ -2,10 +2,15 @@
 
 set -eu
 
-# Build ddns-rs OpenWrt packages (ipk + apk) without the OpenWrt SDK.
-# Produces:
-#   dist/ddns-rs_{version}-r1_all.{ipk,apk}           (init + config + binary manager)
-#   dist/luci-app-ddns-rs_{version}-r1_all.{ipk,apk}  (LuCI frontend + rpcd)
+# Build the ddns-rs OpenWrt LuCI package (.ipk for opkg / .apk for the
+# OpenWrt 25.x apk package manager) without the OpenWrt SDK.
+#
+# Produces a single architecture-independent package that contains both the
+# ddns-rs service files (init script, config, binary manager) and the LuCI
+# frontend. The ddns-rs binary itself is NOT bundled; it is installed and
+# updated via the LuCI "Binary" page (usr/libexec/ddns-rs-binary).
+#
+#   dist/luci-app-ddns-rs_{version}-r1_all.{ipk,apk}
 #   dist/sha256sums.txt
 #
 # Based on the packaging approach of luci-app-oxidns (Sven Shi).
@@ -14,13 +19,10 @@ VERSION="${1:-0.1.0}"
 OUT_DIR="${2:-dist}"
 PKG_VERSION="$(printf '%s' "$VERSION" | sed 's/^v//')"
 
-DDNS_PKG="ddns-rs"
-DDNS_BASE="${DDNS_PKG}_${PKG_VERSION}-r1_all"
 LUCI_PKG="luci-app-ddns-rs"
 LUCI_BASE="${LUCI_PKG}_${PKG_VERSION}-r1_all"
 
-# Paths to package source trees (relative to repo root)
-DDNS_DIR="luci/ddns-rs"
+# Path to the package source tree (relative to repo root)
 LUCI_DIR="luci/luci-app-ddns-rs"
 
 # Resolve the directory holding the helper node scripts (repo-root/luci/scripts)
@@ -136,124 +138,73 @@ EOF
 	chmod 755 "$out"
 }
 
-# ---------------------------------------------------------------- ddns-rs pkg
-
-DDNS_CONTROL_DIR="$TMP_DIR/ddns-control"
-DDNS_DATA_DIR="$TMP_DIR/ddns-data"
-DDNS_APK_CONTROL_DIR="$TMP_DIR/ddns-apk-control"
-mkdir -p "$DDNS_CONTROL_DIR" "$DDNS_DATA_DIR" "$DDNS_APK_CONTROL_DIR" "$OUT_DIR"
+CONTROL_DIR="$TMP_DIR/control"
+DATA_DIR="$TMP_DIR/data"
+APK_CONTROL_DIR="$TMP_DIR/apk-control"
+mkdir -p "$CONTROL_DIR" "$DATA_DIR" "$APK_CONTROL_DIR" "$OUT_DIR"
 OUT_DIR="$(cd "$OUT_DIR" && pwd)"
 
-cat > "$DDNS_CONTROL_DIR/control" <<EOF
-Package: $DDNS_PKG
-Version: $PKG_VERSION-r1
-Architecture: all
-Maintainer: ddns-rs maintainers
-Depends: ca-bundle, curl
-Source: https://github.com/jeessy2/ddns-rs
-Section: net
-Priority: optional
-Description: DDNS-rs client scripts (binary installed via LuCI Binary page)
-EOF
-
-mkdir -p "$DDNS_DATA_DIR/etc/init.d" "$DDNS_DATA_DIR/etc/config" "$DDNS_DATA_DIR/usr/libexec"
-cp "$DDNS_DIR/files/ddns-rs.init" "$DDNS_DATA_DIR/etc/init.d/ddns-rs"
-cp "$DDNS_DIR/files/ddns-rs.conf" "$DDNS_DATA_DIR/etc/config/ddns-rs"
-cp "$DDNS_DIR/files/ddns-rs-binary" "$DDNS_DATA_DIR/usr/libexec/ddns-rs-binary"
-chmod 755 "$DDNS_DATA_DIR/etc/init.d/ddns-rs" "$DDNS_DATA_DIR/usr/libexec/ddns-rs-binary"
-
-tar_create_gz "$TMP_DIR/ddns-control.tar.gz" -C "$DDNS_CONTROL_DIR" .
-tar_create_gz "$TMP_DIR/ddns-data.tar.gz" -C "$DDNS_DATA_DIR" .
-create_ipk "$OUT_DIR/${DDNS_BASE}.ipk" "$TMP_DIR/ddns-control.tar.gz" "$TMP_DIR/ddns-data.tar.gz"
-
-cat > "$DDNS_APK_CONTROL_DIR/.PKGINFO" <<EOF
-pkgname = $DDNS_PKG
-pkgver = $PKG_VERSION-r1
-pkgdesc = DDNS-rs client scripts
-url = https://github.com/jeessy2/ddns-rs
-builddate = $(date +%s)
-packager = ddns-rs maintainers
-size = $(installed_size "$DDNS_DATA_DIR")
-arch = noarch
-origin = $DDNS_PKG
-license = MIT
-depend = ca-bundle
-depend = curl
-EOF
-write_rpcd_restart_script "$DDNS_APK_CONTROL_DIR/.post-install"
-cp "$DDNS_APK_CONTROL_DIR/.post-install" "$DDNS_APK_CONTROL_DIR/.post-upgrade"
-cp "$DDNS_APK_CONTROL_DIR/.post-install" "$DDNS_APK_CONTROL_DIR/.post-deinstall"
-
-create_apk "$OUT_DIR/${DDNS_BASE}.apk" "$DDNS_APK_CONTROL_DIR" "$DDNS_DATA_DIR"
-
-printf 'Wrote %s\n' "$OUT_DIR/${DDNS_BASE}.ipk"
-printf 'Wrote %s\n' "$OUT_DIR/${DDNS_BASE}.apk"
-
-# ------------------------------------------------------------ luci-app pkg
-
-LUCI_CONTROL_DIR="$TMP_DIR/luci-control"
-LUCI_DATA_DIR="$TMP_DIR/luci-data"
-LUCI_APK_CONTROL_DIR="$TMP_DIR/luci-apk-control"
-mkdir -p "$LUCI_CONTROL_DIR" "$LUCI_DATA_DIR" "$LUCI_APK_CONTROL_DIR"
-
-cat > "$LUCI_CONTROL_DIR/control" <<EOF
+cat > "$CONTROL_DIR/control" <<EOF
 Package: $LUCI_PKG
 Version: $PKG_VERSION-r1
 Architecture: all
 Maintainer: ddns-rs maintainers
-Depends: luci-base, rpcd, ddns-rs
+Depends: luci-base, rpcd, curl, ca-bundle
 Source: https://github.com/jeessy2/ddns-rs
 Section: luci
 Priority: optional
-Description: LuCI support for DDNS-rs
+Description: LuCI support for DDNS-rs (service, config and binary manager)
 EOF
 
-mkdir -p "$LUCI_DATA_DIR/www"
+mkdir -p "$DATA_DIR/www"
 if [ -d "$LUCI_DIR/htdocs" ]; then
-	cp -R "$LUCI_DIR/htdocs/." "$LUCI_DATA_DIR/www/"
+	cp -R "$LUCI_DIR/htdocs/." "$DATA_DIR/www/"
 fi
 if [ -d "$LUCI_DIR/root" ]; then
-	cp -R "$LUCI_DIR/root/." "$LUCI_DATA_DIR/"
+	cp -R "$LUCI_DIR/root/." "$DATA_DIR/"
 fi
-chmod 755 "$LUCI_DATA_DIR/usr/libexec/ddns-rs-call" 2>/dev/null || true
-if [ -f "$LUCI_DATA_DIR/etc/uci-defaults/99-luci-ddns-rs" ]; then
-	chmod 755 "$LUCI_DATA_DIR/etc/uci-defaults/99-luci-ddns-rs"
+chmod 755 "$DATA_DIR/etc/init.d/ddns-rs" 2>/dev/null || true
+chmod 755 "$DATA_DIR/usr/libexec/ddns-rs-binary" 2>/dev/null || true
+chmod 755 "$DATA_DIR/usr/libexec/ddns-rs-call" 2>/dev/null || true
+if [ -f "$DATA_DIR/etc/uci-defaults/99-luci-ddns-rs" ]; then
+	chmod 755 "$DATA_DIR/etc/uci-defaults/99-luci-ddns-rs"
 fi
 
-write_rpcd_restart_script "$LUCI_CONTROL_DIR/postinst"
-write_rpcd_restart_script "$LUCI_CONTROL_DIR/postrm"
+write_rpcd_restart_script "$CONTROL_DIR/postinst"
+write_rpcd_restart_script "$CONTROL_DIR/postrm"
 
-tar_create_gz "$TMP_DIR/luci-control.tar.gz" -C "$LUCI_CONTROL_DIR" .
-tar_create_gz "$TMP_DIR/luci-data.tar.gz" -C "$LUCI_DATA_DIR" .
-create_ipk "$OUT_DIR/${LUCI_BASE}.ipk" "$TMP_DIR/luci-control.tar.gz" "$TMP_DIR/luci-data.tar.gz"
+tar_create_gz "$TMP_DIR/control.tar.gz" -C "$CONTROL_DIR" .
+tar_create_gz "$TMP_DIR/data.tar.gz" -C "$DATA_DIR" .
+create_ipk "$OUT_DIR/${LUCI_BASE}.ipk" "$TMP_DIR/control.tar.gz" "$TMP_DIR/data.tar.gz"
 
-cat > "$LUCI_APK_CONTROL_DIR/.PKGINFO" <<EOF
+cat > "$APK_CONTROL_DIR/.PKGINFO" <<EOF
 pkgname = $LUCI_PKG
 pkgver = $PKG_VERSION-r1
-pkgdesc = LuCI support for DDNS-rs
+pkgdesc = LuCI support for DDNS-rs (service, config and binary manager)
 url = https://github.com/jeessy2/ddns-rs
 builddate = $(date +%s)
 packager = ddns-rs maintainers
-size = $(installed_size "$LUCI_DATA_DIR")
+size = $(installed_size "$DATA_DIR")
 arch = noarch
 origin = $LUCI_PKG
 license = MIT
 depend = luci-base
 depend = rpcd
-depend = ddns-rs
+depend = curl
+depend = ca-bundle
 EOF
-write_rpcd_restart_script "$LUCI_APK_CONTROL_DIR/.post-install"
-cp "$LUCI_APK_CONTROL_DIR/.post-install" "$LUCI_APK_CONTROL_DIR/.post-upgrade"
-cp "$LUCI_APK_CONTROL_DIR/.post-install" "$LUCI_APK_CONTROL_DIR/.post-deinstall"
+write_rpcd_restart_script "$APK_CONTROL_DIR/.post-install"
+cp "$APK_CONTROL_DIR/.post-install" "$APK_CONTROL_DIR/.post-upgrade"
+cp "$APK_CONTROL_DIR/.post-install" "$APK_CONTROL_DIR/.post-deinstall"
 
-create_apk "$OUT_DIR/${LUCI_BASE}.apk" "$LUCI_APK_CONTROL_DIR" "$LUCI_DATA_DIR"
+create_apk "$OUT_DIR/${LUCI_BASE}.apk" "$APK_CONTROL_DIR" "$DATA_DIR"
 
 printf 'Wrote %s\n' "$OUT_DIR/${LUCI_BASE}.ipk"
 printf 'Wrote %s\n' "$OUT_DIR/${LUCI_BASE}.apk"
 
 (
 	cd "$OUT_DIR"
-	sha256sum "${DDNS_BASE}.ipk" "${DDNS_BASE}.apk" "${LUCI_BASE}.ipk" "${LUCI_BASE}.apk"
+	sha256sum "${LUCI_BASE}.ipk" "${LUCI_BASE}.apk"
 ) > "$OUT_DIR/sha256sums.txt"
 
 printf 'Done. Packages in %s\n' "$OUT_DIR"

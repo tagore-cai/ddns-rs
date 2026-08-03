@@ -2,13 +2,13 @@
 
 set -eu
 
-# Integration checks for the built ddns-rs packages:
+# Integration checks for the built ddns-rs LuCI package:
 #  verifies the .ipk/.apk archives contain the expected members.
 
 OUT_DIR="${1:-dist}"
 PKG_VERSION="${PKG_VERSION:-0.1.0-r1}"
-DDNS_BASE="ddns-rs_${PKG_VERSION}_all"
-LUCI_BASE="luci-app-ddns-rs_${PKG_VERSION}_all"
+BASE="luci-app-ddns-rs_${PKG_VERSION}_all"
+
 json_ok() {
 	node -e "const v=JSON.parse(require('fs').readFileSync(0,'utf8')); if (!($1)) process.exit(1);"
 }
@@ -75,50 +75,36 @@ need_cmd grep
 need_cmd node
 need_cmd tar
 
-# --- ddns-rs ipk ---
-tar_has_member "$OUT_DIR/${DDNS_BASE}.ipk" debian-binary
-tar_has_member "$OUT_DIR/${DDNS_BASE}.ipk" control.tar.gz
-tar_has_member "$OUT_DIR/${DDNS_BASE}.ipk" data.tar.gz
-tar_nested_has_member "$OUT_DIR/${DDNS_BASE}.ipk" control.tar.gz control
-tar_nested_has_member "$OUT_DIR/${DDNS_BASE}.ipk" data.tar.gz etc/init.d/ddns-rs
-tar_nested_has_member "$OUT_DIR/${DDNS_BASE}.ipk" data.tar.gz etc/config/ddns-rs
-tar_nested_has_member "$OUT_DIR/${DDNS_BASE}.ipk" data.tar.gz usr/libexec/ddns-rs-binary
+# --- ipk ---
+tar_has_member "$OUT_DIR/${BASE}.ipk" debian-binary
+tar_has_member "$OUT_DIR/${BASE}.ipk" control.tar.gz
+tar_has_member "$OUT_DIR/${BASE}.ipk" data.tar.gz
+tar_nested_has_member "$OUT_DIR/${BASE}.ipk" control.tar.gz postinst
+tar_nested_has_member "$OUT_DIR/${BASE}.ipk" control.tar.gz postrm
+tar_nested_has_member "$OUT_DIR/${BASE}.ipk" data.tar.gz etc/init.d/ddns-rs
+tar_nested_has_member "$OUT_DIR/${BASE}.ipk" data.tar.gz etc/config/ddns-rs
+tar_nested_has_member "$OUT_DIR/${BASE}.ipk" data.tar.gz usr/libexec/ddns-rs-binary
+tar_nested_has_member "$OUT_DIR/${BASE}.ipk" data.tar.gz usr/libexec/ddns-rs-call
+tar_nested_has_member "$OUT_DIR/${BASE}.ipk" data.tar.gz usr/share/luci/menu.d/luci-app-ddns-rs.json
+tar_nested_has_member "$OUT_DIR/${BASE}.ipk" data.tar.gz usr/share/rpcd/acl.d/luci-app-ddns-rs.json
+tar_nested_has_member "$OUT_DIR/${BASE}.ipk" data.tar.gz usr/share/rpcd/ucode/luci.ddns-rs
+tar_nested_has_member "$OUT_DIR/${BASE}.ipk" data.tar.gz www/luci-static/resources/view/ddns-rs/config.js
+tar_nested_has_member "$OUT_DIR/${BASE}.ipk" data.tar.gz www/luci-static/resources/view/ddns-rs/binary.js
 
-# --- luci-app ipk ---
-tar_has_member "$OUT_DIR/${LUCI_BASE}.ipk" debian-binary
-tar_has_member "$OUT_DIR/${LUCI_BASE}.ipk" control.tar.gz
-tar_has_member "$OUT_DIR/${LUCI_BASE}.ipk" data.tar.gz
-tar_nested_has_member "$OUT_DIR/${LUCI_BASE}.ipk" control.tar.gz postinst
-tar_nested_has_member "$OUT_DIR/${LUCI_BASE}.ipk" control.tar.gz postrm
-tar_nested_has_member "$OUT_DIR/${LUCI_BASE}.ipk" data.tar.gz usr/share/luci/menu.d/luci-app-ddns-rs.json
-tar_nested_has_member "$OUT_DIR/${LUCI_BASE}.ipk" data.tar.gz usr/share/rpcd/acl.d/luci-app-ddns-rs.json
-tar_nested_has_member "$OUT_DIR/${LUCI_BASE}.ipk" data.tar.gz usr/share/rpcd/ucode/luci.ddns-rs
-tar_nested_has_member "$OUT_DIR/${LUCI_BASE}.ipk" data.tar.gz usr/libexec/ddns-rs-call
-tar_nested_has_member "$OUT_DIR/${LUCI_BASE}.ipk" data.tar.gz www/luci-static/resources/view/ddns-rs/config.js
-
-# --- ddns-rs apk ---
-tar_has_member "$OUT_DIR/${DDNS_BASE}.apk" .PKGINFO
-tar_member_contains "$OUT_DIR/${DDNS_BASE}.apk" .PKGINFO '^arch = noarch$'
-tar_member_contains "$OUT_DIR/${DDNS_BASE}.apk" .PKGINFO '^datahash = [0-9a-f][0-9a-f]*$'
-apk_data_has_checksum "$OUT_DIR/${DDNS_BASE}.apk"
-tar_has_member "$OUT_DIR/${DDNS_BASE}.apk" etc/init.d/ddns-rs
-tar_has_member "$OUT_DIR/${DDNS_BASE}.apk" etc/config/ddns-rs
-tar_has_member "$OUT_DIR/${DDNS_BASE}.apk" usr/libexec/ddns-rs-binary
-tar_has_member "$OUT_DIR/${DDNS_BASE}.apk" .post-install
-tar_has_member "$OUT_DIR/${DDNS_BASE}.apk" .post-upgrade
-tar_has_member "$OUT_DIR/${DDNS_BASE}.apk" .post-deinstall
-
-# --- luci-app apk ---
-tar_has_member "$OUT_DIR/${LUCI_BASE}.apk" .PKGINFO
-tar_member_contains "$OUT_DIR/${LUCI_BASE}.apk" .PKGINFO '^arch = noarch$'
-tar_member_contains "$OUT_DIR/${LUCI_BASE}.apk" .PKGINFO '^datahash = [0-9a-f][0-9a-f]*$'
-apk_data_has_checksum "$OUT_DIR/${LUCI_BASE}.apk"
-tar_has_member "$OUT_DIR/${LUCI_BASE}.apk" usr/share/luci/menu.d
-tar_has_member "$OUT_DIR/${LUCI_BASE}.apk" www/luci-static/resources/view/ddns-rs
-tar_has_member "$OUT_DIR/${LUCI_BASE}.apk" usr/libexec/ddns-rs-call
-tar_has_member "$OUT_DIR/${LUCI_BASE}.apk" .post-install
-tar_has_member "$OUT_DIR/${LUCI_BASE}.apk" .post-upgrade
-tar_has_member "$OUT_DIR/${LUCI_BASE}.apk" .post-deinstall
+# --- apk ---
+tar_has_member "$OUT_DIR/${BASE}.apk" .PKGINFO
+tar_member_contains "$OUT_DIR/${BASE}.apk" .PKGINFO '^arch = noarch$'
+tar_member_contains "$OUT_DIR/${BASE}.apk" .PKGINFO '^datahash = [0-9a-f][0-9a-f]*$'
+apk_data_has_checksum "$OUT_DIR/${BASE}.apk"
+tar_has_member "$OUT_DIR/${BASE}.apk" etc/init.d/ddns-rs
+tar_has_member "$OUT_DIR/${BASE}.apk" etc/config/ddns-rs
+tar_has_member "$OUT_DIR/${BASE}.apk" usr/libexec/ddns-rs-binary
+tar_has_member "$OUT_DIR/${BASE}.apk" usr/libexec/ddns-rs-call
+tar_has_member "$OUT_DIR/${BASE}.apk" usr/share/luci/menu.d
+tar_has_member "$OUT_DIR/${BASE}.apk" www/luci-static/resources/view/ddns-rs
+tar_has_member "$OUT_DIR/${BASE}.apk" .post-install
+tar_has_member "$OUT_DIR/${BASE}.apk" .post-upgrade
+tar_has_member "$OUT_DIR/${BASE}.apk" .post-deinstall
 
 (cd "$OUT_DIR" && sha256sum -c sha256sums.txt)
 

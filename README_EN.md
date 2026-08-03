@@ -78,14 +78,14 @@ docker run -d --name ddns-rs --restart=always \
 DDNS-RS provides a LuCI plugin supporting OpenWrt 24.10 (ipk) and 25.x (apk).
 
 - Download `openwrt-*.tar.gz` from [Releases](https://github.com/jeessy2/ddns-rs/releases)
-- Install the package for your architecture:
-  `opkg install ddns-rs_*.ipk` / `apk add ddns-rs_*.apk`
-- After installing `luci-app-ddns-rs`, configure it in LuCI **Services → DDNS-RS**
+- Install the `luci-app-ddns-rs` package:
+  `opkg install luci-app-ddns-rs_*.ipk` / `apk add luci-app-ddns-rs_*.apk`
+- After installing, configure it in LuCI **Services → DDNS-RS**
 
-> The DDNS-RS package does **not** bundle the binary. After installation, use
-> the **Binary** page in LuCI (upload / custom URL / one-click auto-update) to
-> install the ddns-rs binary, so updating ddns-rs does not require reinstalling
-> the LuCI package.
+> The LuCI package does **not** bundle the ddns-rs binary. After installation,
+> use the **Binary** page in LuCI (upload / custom URL / one-click auto-update)
+> to install the ddns-rs binary, so updating ddns-rs does not require
+> reinstalling the LuCI package.
 
 ## CLI options
 
