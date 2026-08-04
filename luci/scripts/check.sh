@@ -10,7 +10,7 @@ set -eu
 H="luci/luci-app-ddns-rs/htdocs/luci-static/resources/view/ddns-rs"
 R="luci/luci-app-ddns-rs/root"
 
-node -e "for (const f of ['$H/binary.js','$H/config.js','$H/ddns-rs.js','$H/log.js']) new Function(require('fs').readFileSync(f,'utf8'));"
+node -e "const fs=require('fs'); for (const f of fs.readdirSync('$H').filter(x=>x.endsWith('.js'))) new Function(fs.readFileSync('$H/'+f,'utf8'));"
 node -e "for (const f of ['$R/usr/share/luci/menu.d/luci-app-ddns-rs.json','$R/usr/share/rpcd/acl.d/luci-app-ddns-rs.json']) JSON.parse(require('fs').readFileSync(f,'utf8'));"
 
 node <<'NODE'

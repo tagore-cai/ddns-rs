@@ -243,15 +243,6 @@ msgstr "重置"
 msgid "Current Version"
 msgstr "当前版本"
 
-msgid "DDNS-RS Service"
-msgstr "DDNS-RS 服务"
-
-msgid "Web Interface"
-msgstr "Web 界面"
-
-msgid "DDNS-RS provides its own web interface. Open it in a new browser tab to manage domains and providers."
-msgstr "DDNS-RS 自带 Web 界面，在新标签页中打开以管理域名和提供商。"
-
 msgid "Loading logs..."
 msgstr "正在加载日志..."
 
@@ -275,9 +266,6 @@ msgstr "读取日志失败: %s"
 
 msgid "Refresh every 5 seconds."
 msgstr "每 5 秒刷新"
-
-msgid "DDNS-RS Control panel"
-msgstr "DDNS-RS操作台"
 
 msgid "Base Setting"
 msgstr "基础设置"

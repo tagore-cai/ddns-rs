@@ -243,15 +243,6 @@ msgstr ""
 msgid "Current Version"
 msgstr ""
 
-msgid "DDNS-RS Service"
-msgstr ""
-
-msgid "Web Interface"
-msgstr ""
-
-msgid "DDNS-RS provides its own web interface. Open it in a new browser tab to manage domains and providers."
-msgstr ""
-
 msgid "Loading logs..."
 msgstr ""
 
@@ -274,9 +265,6 @@ msgid "Failed to read logs: %s"
 msgstr ""
 
 msgid "Refresh every 5 seconds."
-msgstr ""
-
-msgid "DDNS-RS Control panel"
 msgstr ""
 
 msgid "Base Setting"
