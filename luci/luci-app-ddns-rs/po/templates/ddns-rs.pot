@@ -177,13 +177,16 @@ msgstr ""
 msgid "Checking status..."
 msgstr ""
 
+msgid "Default web interface login: Username: admin, Password: admin12345"
+msgstr ""
+
 msgid "Enable"
 msgstr ""
 
-msgid "Listen port"
+msgid "Listen address"
 msgstr ""
 
-msgid "Port number (1-65535)"
+msgid "Full listen address, e.g. [::]:9876 or 0.0.0.0:9876"
 msgstr ""
 
 msgid "Update interval (seconds)"

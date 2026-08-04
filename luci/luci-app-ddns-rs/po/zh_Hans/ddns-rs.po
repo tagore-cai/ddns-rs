@@ -177,14 +177,17 @@ msgstr "DDNS-RS 自动获取您的公网 IPv4 或 IPv6 地址，并解析到对�
 msgid "Checking status..."
 msgstr "检查状态中..."
 
+msgid "Default web interface login: Username: admin, Password: admin12345"
+msgstr "Web 界面默认登录：用户名 admin，密码 admin12345"
+
 msgid "Enable"
 msgstr "启用"
 
-msgid "Listen port"
-msgstr "监听端口"
+msgid "Listen address"
+msgstr "监听地址"
 
-msgid "Port number (1-65535)"
-msgstr "端口范围(1-65535)"
+msgid "Full listen address, e.g. [::]:9876 or 0.0.0.0:9876"
+msgstr "完整监听地址，例如 [::]:9876 或 0.0.0.0:9876"
 
 msgid "Update interval (seconds)"
 msgstr "更新间隔（秒）"

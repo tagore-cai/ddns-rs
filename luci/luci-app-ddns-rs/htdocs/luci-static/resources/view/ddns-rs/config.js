@@ -204,8 +204,12 @@ return view.extend({
             
             poll.add(window.statusPoll, 5);
             
+            var defaultCreds = E('p', { 'class': 'cbi-section-descr' },
+                _('Default web interface login: Username: admin, Password: admin12345'));
+            
             return E('div', { class: 'cbi-section', id: 'status_bar' }, [
-                statusView
+                statusView,
+                defaultCreds
             ]);
         };
 
@@ -215,11 +219,11 @@ return view.extend({
         o.default = o.disabled;
         o.rmempty = false;
 
-        o = s.option(form.Value, 'port', _('Listen port'));
-        o.default = '9876';
+        o = s.option(form.Value, 'port', _('Listen address'));
+        o.default = '[::]:9876';
         o.rmempty = false;
         o.datatype = 'string'; 
-        o.description = _('Port number (1-65535)');
+        o.description = _('Full listen address, e.g. [::]:9876 or 0.0.0.0:9876');
 
         o = s.option(form.Value, 'time', _('Update interval (seconds)'));
         o.default = '300';

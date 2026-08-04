@@ -25,8 +25,8 @@ build_args() {
     local cfg="$1"
     local args="-c $CONF"
     
-    config_get port "$cfg" port '9876'
-    args="$args -l :$port"
+    config_get port "$cfg" port '[::]:9876'
+    args="$args -l $port"
     
     config_get time "$cfg" time '300'
     [ -n "$time" ] && args="$args -f $time"
