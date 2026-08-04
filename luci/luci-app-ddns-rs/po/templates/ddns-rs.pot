@@ -156,7 +156,7 @@ msgstr ""
 msgid "Username: admin, Password: admin12345"
 msgstr ""
 
-msgid "You need to restart DDNS-Go service for the changes to take effect."
+msgid "You need to restart DDNS-RS service for the changes to take effect."
 msgstr ""
 
 msgid "Restart Service Now"
@@ -168,10 +168,10 @@ msgstr ""
 msgid "Partial Reset"
 msgstr ""
 
-msgid "DDNS-Go command reset may have failed, but configuration file has been updated."
+msgid "DDNS-RS command reset may have failed, but configuration file has been updated."
 msgstr ""
 
-msgid "You may need to restart DDNS-Go service manually."
+msgid "You may need to restart DDNS-RS service manually."
 msgstr ""
 
 msgid "ERROR:"
@@ -183,7 +183,7 @@ msgstr ""
 msgid "SUCCESS:"
 msgstr ""
 
-msgid "DDNS-Go service restarted successfully"
+msgid "DDNS-RS service restarted successfully"
 msgstr ""
 
 msgid "Failed to restart service:"

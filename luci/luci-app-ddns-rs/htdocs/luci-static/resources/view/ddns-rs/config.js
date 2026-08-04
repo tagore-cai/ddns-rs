@@ -155,7 +155,7 @@ return view.extend({
             if (result.code === 0) {
                 ui.showModal(_('Username and Password Reset Successful'), [
                     E('p', _('Username: admin, Password: admin12345')),
-                    E('p', _('You need to restart DDNS-Go service for the changes to take effect.')),
+                    E('p', _('You need to restart DDNS-RS service for the changes to take effect.')),
                     E('div', { 'class': 'right' }, [
                         E('button', {
                             'class': 'btn cbi-button cbi-button-positive',
@@ -173,9 +173,9 @@ return view.extend({
                 ]);
             } else {
                 ui.showModal(_('Partial Reset'), [
-                    E('p', _('DDNS-Go command reset may have failed, but configuration file has been updated.')),
+                    E('p', _('DDNS-RS command reset may have failed, but configuration file has been updated.')),
                     E('p', _('Username: admin, Password: admin12345')),
-                    E('p', _('You may need to restart DDNS-Go service manually.')),
+                    E('p', _('You may need to restart DDNS-RS service manually.')),
                     E('div', { 'class': 'right' }, [
                         E('button', {
                             'class': 'btn cbi-button cbi-button-positive',
@@ -215,7 +215,7 @@ return view.extend({
             await fs.exec('/etc/init.d/ddns-rs', ['start']);
         }
         
-        alert(_('SUCCESS:') + '\n' + _('DDNS-Go service restarted successfully'));
+        alert(_('SUCCESS:') + '\n' + _('DDNS-RS service restarted successfully'));
         if (window.statusPoll) {
             window.statusPoll();
         }

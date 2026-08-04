@@ -156,8 +156,8 @@ msgstr "用户名和密码重置成功"
 msgid "Username: admin, Password: admin12345"
 msgstr "用户名: admin, 密码: admin12345"
 
-msgid "You need to restart DDNS-Go service for the changes to take effect."
-msgstr "您需要重启 DDNS-Go 服务以使更改生效。"
+msgid "You need to restart DDNS-RS service for the changes to take effect."
+msgstr "您需要重启 DDNS-RS 服务以使更改生效。"
 
 msgid "Restart Service Now"
 msgstr "立即重启服务"
@@ -168,11 +168,11 @@ msgstr "稍后重启"
 msgid "Partial Reset"
 msgstr "部分重置"
 
-msgid "DDNS-Go command reset may have failed, but configuration file has been updated."
-msgstr "DDNS-Go 命令重置可能失败，但配置文件已更新。"
+msgid "DDNS-RS command reset may have failed, but configuration file has been updated."
+msgstr "DDNS-RS 命令重置可能失败，但配置文件已更新。"
 
-msgid "You may need to restart DDNS-Go service manually."
-msgstr "您可能需要手动重启 DDNS-Go 服务。"
+msgid "You may need to restart DDNS-RS service manually."
+msgstr "您可能需要手动重启 DDNS-RS 服务。"
 
 msgid "ERROR:"
 msgstr "错误:"
@@ -183,8 +183,8 @@ msgstr "重置用户名/密码失败:"
 msgid "SUCCESS:"
 msgstr "成功:"
 
-msgid "DDNS-Go service restarted successfully"
-msgstr "DDNS-Go 服务重启成功"
+msgid "DDNS-RS service restarted successfully"
+msgstr "DDNS-RS 服务重启成功"
 
 msgid "Failed to restart service:"
 msgstr "重启服务失败:"
