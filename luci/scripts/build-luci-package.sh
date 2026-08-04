@@ -125,6 +125,20 @@ write_rpcd_restart_script() {
 	cat > "$out" <<'EOF'
 #!/bin/sh
 [ -n "${IPKG_INSTROOT:-}" ] && exit 0
+# Ensure the ddns-rs user/group exists (init script runs procd as user ddns-rs)
+if ! grep -q '^ddns-rs:' /etc/group 2>/dev/null; then
+	groupadd ddns-rs 2>/dev/null || true
+fi
+if ! grep -q '^ddns-rs:' /etc/passwd 2>/dev/null; then
+	useradd -r -s /bin/false -g ddns-rs ddns-rs 2>/dev/null || true
+fi
+[ -d /etc/ddns-rs ] || mkdir -p /etc/ddns-rs
+chown -R ddns-rs:ddns-rs /etc/ddns-rs 2>/dev/null || true
+# Start the service on install if the binary is present (and enable it).
+if [ -x /etc/init.d/ddns-rs ] && [ -x /usr/bin/ddns-rs ]; then
+	/etc/init.d/ddns-rs enable 2>/dev/null || true
+	/etc/init.d/ddns-rs start 2>/dev/null || true
+fi
 rm -f /tmp/luci-indexcache* 2>/dev/null || true
 rm -rf /tmp/luci-modulecache/* 2>/dev/null || true
 if [ -d /www/luci-static/resources/view/ddns-rs ]; then
@@ -163,6 +177,14 @@ fi
 if [ -d "$LUCI_DIR/root" ]; then
 	cp -R "$LUCI_DIR/root/." "$DATA_DIR/"
 fi
+
+# Compile the Simplified Chinese translation into LuCI's lmo format so the
+# UI strings are translated (po -> lmo via po2lmo.mjs).
+if [ -f "$LUCI_DIR/po/zh_Hans/ddns-rs.po" ]; then
+	mkdir -p "$DATA_DIR/usr/lib/lua/luci/i18n"
+	node "$SCRIPT_DIR/po2lmo.mjs" "$LUCI_DIR/po/zh_Hans/ddns-rs.po" "$DATA_DIR/usr/lib/lua/luci/i18n/ddns-rs.zh-cn.lmo"
+fi
+
 chmod 755 "$DATA_DIR/etc/init.d/ddns-rs" 2>/dev/null || true
 chmod 755 "$DATA_DIR/usr/libexec/rpcd/luci.ddns-rs" 2>/dev/null || true
 chmod 755 "$DATA_DIR/usr/libexec/ddns-rs-call" 2>/dev/null || true

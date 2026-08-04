@@ -189,6 +189,20 @@ binary_installed() {
 	[ -x "$BIN" ]
 }
 
+# Create the ddns-rs system user/group used by the init script (procd runs
+# the service as ddns-rs). OpenWrt package managers may not create it when
+# the binary is installed via the LuCI page after the package install.
+ensure_user() {
+	if ! grep -q '^ddns-rs:' /etc/group 2>/dev/null; then
+		groupadd ddns-rs 2>/dev/null || true
+	fi
+	if ! grep -q '^ddns-rs:' /etc/passwd 2>/dev/null; then
+		useradd -r -s /bin/false -g ddns-rs ddns-rs 2>/dev/null || true
+	fi
+	mkdir -p /etc/ddns-rs 2>/dev/null || true
+	chown -R ddns-rs:ddns-rs /etc/ddns-rs 2>/dev/null || true
+}
+
 binary_version() {
 	if binary_installed; then
 		"$BIN" -v 2>/dev/null || echo "unknown"
@@ -274,6 +288,15 @@ install_from_file() {
 	}
 	chmod 755 "$BIN"
 	rm -rf "$UNPACK_DIR"
+
+	# Ensure the runtime user exists, then (re)start the service.
+	ensure_user
+	if [ -x /etc/init.d/ddns-rs ]; then
+		progress_command "/etc/init.d/ddns-rs enable"
+		/etc/init.d/ddns-rs enable >/dev/null 2>&1 || true
+		progress_command "/etc/init.d/ddns-rs restart"
+		/etc/init.d/ddns-rs restart >/dev/null 2>&1 || true
+	fi
 
 	VER="$(binary_version)"
 	progress_log "success" "ddns-rs installed: $VER"

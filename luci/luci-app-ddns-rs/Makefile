@@ -20,6 +20,7 @@ PKG_MAINTAINER:=ddns-rs maintainers
 LUCI_TITLE:=LuCI support for ddns-rs (Rust DDNS client)
 LUCI_DEPENDS:=+luci-base +rpcd +curl +ca-bundle
 LUCI_PKGARCH:=all
+USERID:=ddns-rs:ddns-rs
 
 define Package/luci-app-ddns-rs/conffiles
 /etc/config/ddns-rs
@@ -29,6 +30,8 @@ endef
 define Package/luci-app-ddns-rs/postinst
 #!/bin/sh
 [ -n "$${IPKG_INSTROOT:-}" ] && exit 0
+[ -d /etc/ddns-rs ] || mkdir -p /etc/ddns-rs
+chown -R ddns-rs:ddns-rs /etc/ddns-rs 2>/dev/null || true
 rm -f /tmp/luci-indexcache* 2>/dev/null || true
 rm -rf /tmp/luci-modulecache/* 2>/dev/null || true
 if [ -d /www/luci-static/resources/view/ddns-rs ]; then
