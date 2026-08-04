@@ -238,6 +238,23 @@ validate_elf() {
 	[ "$MAGIC" = "7f454c46" ]
 }
 
+# Verify the binary actually runs on this platform by executing it with -v.
+# A binary for the wrong architecture fails with exec format error, which
+# catches arm64/x86_64 mismatches that pure ELF-magic checks miss.
+validate_executable() {
+	FILE="$1"
+	CHECK_BIN="$(dirname "$BIN")/.ddns-rs-check.$$"
+	mkdir -p "$(dirname "$BIN")"
+	cp "$FILE" "$CHECK_BIN" 2>/dev/null || return 1
+	chmod 755 "$CHECK_BIN"
+	set +e
+	"$CHECK_BIN" -v >/dev/null 2>&1
+	VALIDATE_RC="$?"
+	set -e
+	rm -f "$CHECK_BIN"
+	[ "$VALIDATE_RC" -eq 0 ]
+}
+
 # Install ddns-rs from a local file: either a raw ELF binary or a tar.gz
 # archive containing a file named ddns-rs.
 install_from_file() {
@@ -276,6 +293,11 @@ install_from_file() {
 	if ! validate_elf "$SRC"; then
 		rm -rf "$UNPACK_DIR"
 		json_detailed_error "invalid_binary" "uploaded or downloaded file is not a valid ELF binary" "$KIND" "path=$SRC"
+		return 1
+	fi
+	if ! validate_executable "$SRC"; then
+		rm -rf "$UNPACK_DIR"
+		json_detailed_error "arch_mismatch" "binary is not executable on this platform (wrong architecture?)" "$KIND" "path=$SRC machine=$(uname -m)"
 		return 1
 	fi
 
