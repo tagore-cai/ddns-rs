@@ -34,7 +34,8 @@ struct Record {
     content: String,
     proxied: bool,
     ttl: i32,
-    comment: String,
+    #[serde(default)]
+    comment: Option<String>,
 }
 
 #[derive(serde::Deserialize, Debug)]
@@ -132,7 +133,7 @@ impl Cloudflare {
             content: ip_addr.to_string(),
             proxied: params.get("proxied").map(|p| p == "true").unwrap_or(false),
             ttl: self.ttl,
-            comment: params.get("comment").cloned().unwrap_or_default(),
+            comment: params.get("comment").cloned(),
         };
         match self
             .request::<StatusResp, Record>("POST", &format!("{}/{}/dns_records", ZONES_API, zone_id), Some(&record))
@@ -267,6 +268,29 @@ mod tests {
         // No records -> result is null.
         let s: RecordsResp = serde_json::from_str(r#"{"success":true,"messages":[],"result":null}"#).unwrap();
         assert!(s.result.is_none());
+    }
+
+    #[test]
+    fn test_parse_records_resp_null_comment() {
+        // Cloudflare returns "comment":null for records without a comment.
+        let s: RecordsResp = serde_json::from_str(
+            r#"{"success":true,"messages":[],"result":[{"id":"r1","name":"www","type":"AAAA","content":"::1","proxiable":true,"proxied":false,"ttl":1,"settings":{},"meta":{},"comment":null,"tags":[],"created_on":"2026-07-17T09:08:34.312763Z","modified_on":"2026-08-02T14:13:50.864713Z"}]}"#,
+        )
+        .unwrap();
+        assert!(s.success);
+        let rec = &s.result.as_ref().unwrap()[0];
+        assert_eq!(rec.comment, None, "null comment must parse as None");
+    }
+
+    #[test]
+    fn test_parse_records_resp_missing_comment() {
+        // Older/newer API may omit comment entirely; must also parse.
+        let s: RecordsResp = serde_json::from_str(
+            r#"{"success":true,"messages":[],"result":[{"id":"r1","name":"www","type":"A","content":"1.2.3.4","proxied":false,"ttl":1}]}"#,
+        )
+        .unwrap();
+        let rec = &s.result.as_ref().unwrap()[0];
+        assert_eq!(rec.comment, None);
     }
 
     #[test]
