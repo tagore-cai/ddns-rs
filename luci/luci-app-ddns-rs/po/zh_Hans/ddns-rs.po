@@ -138,8 +138,8 @@ msgstr "运行中"
 msgid "NOT RUNNING"
 msgstr "未运行"
 
-msgid "DDNS-Go"
-msgstr "DDNS-Go"
+msgid "DDNS-RS"
+msgstr "DDNS-RS"
 
 msgid "Open Web Interface"
 msgstr "打开Web界面"
@@ -197,9 +197,6 @@ msgstr "当前版本"
 
 msgid "Update failed"
 msgstr "更新失败"
-
-msgid "DDNS-RS"
-msgstr "DDNS-RS"
 
 msgid "DDNS-RS automatically obtains your public IPv4 or IPv6 address and resolves it to the corresponding domain name service."
 msgstr "DDNS-RS 自动获取您的公网 IPv4 或 IPv6 地址，并解析到对应的域名服务。"

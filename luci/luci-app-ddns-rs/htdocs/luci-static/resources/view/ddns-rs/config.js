@@ -14,6 +14,12 @@ const getDDNSGoInfo = rpc.declare({
     expect: { 'ver': {} }
 });
 
+const getStatusInfo = rpc.declare({
+    object: 'luci.ddns-rs',
+    method: 'status',
+    expect: {}
+});
+
 const getUpdateInfo = rpc.declare({
     object: 'luci.ddns-rs',
     method: 'last_update',
@@ -29,32 +35,23 @@ const updateMessageMap = {
     'Update status unknown': _('Update status unknown')
 };
 
-async function checkProcess() {
-    try {
-        const pidofRes = await fs.exec('/bin/pidof', ['ddns-rs']);
-        if (pidofRes.code === 0) {
-            return {
-                running: true,
-                pid: pidofRes.stdout.trim()
-            };
-        }
-    } catch (err) {
-    }
-    try {
-        const psRes = await fs.exec('/bin/ps', ['-C', 'ddns-rs', '-o', 'pid=']);
-        const pid = psRes.stdout.trim();
+function checkProcess() {
+    return L.resolveDefault(getStatusInfo(), {}).then(function(status) {
+        status = status || {};
+        var binary = status.binary || {};
         return {
-            running: pid !== '',
-            pid: pid || null
+            running: !!(status.service && status.service.running),
+            version: binary.version
         };
-    } catch (err) {
-        return { running: false, pid: null };
-    }
+    }).catch(function() {
+        return { running: false, version: '' };
+    });
 }
 
 function getVersionInfo() {
     return L.resolveDefault(getDDNSGoInfo(), {}).then(function(result) {
-        return result || {};
+        var ver = (result && result.ver) || {};
+        return { version: ver.version || '' };
     }).catch(function(error) {
         console.error('Failed to get version:', error);
         return {};
@@ -63,7 +60,7 @@ function getVersionInfo() {
 
 function checkUpdateStatus() {
     return L.resolveDefault(getUpdateInfo(), {}).then(function(result) {
-        return result || {};
+        return (result && result.update) || result || {};
     }).catch(function(error) {
         console.error('Failed to get update info:', error);
         return {};
@@ -86,7 +83,7 @@ function renderStatus(isRunning, listen_port, noweb, version) {
     
     var html = String.format(
         '<em><span style="color:%s">%s <strong>%s %s - %s</strong></span></em>',
-        color, icon, _('DDNS-Go'), versionText, statusText
+        color, icon, _('DDNS-RS'), versionText, statusText
     );
     
     if (isRunning) {

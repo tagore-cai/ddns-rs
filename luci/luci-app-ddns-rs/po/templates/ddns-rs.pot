@@ -138,7 +138,7 @@ msgstr ""
 msgid "NOT RUNNING"
 msgstr ""
 
-msgid "DDNS-Go"
+msgid "DDNS-RS"
 msgstr ""
 
 msgid "Open Web Interface"
@@ -196,9 +196,6 @@ msgid "Current Version"
 msgstr ""
 
 msgid "Update failed"
-msgstr ""
-
-msgid "DDNS-RS"
 msgstr ""
 
 msgid "DDNS-RS automatically obtains your public IPv4 or IPv6 address and resolves it to the corresponding domain name service."
