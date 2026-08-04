@@ -273,16 +273,13 @@ msgstr ""
 msgid "Check"
 msgstr ""
 
-msgid "DDNS-RS Service Not Running"
+msgid "DDNS-RS Service"
 msgstr ""
 
-msgid "DDNS-RS Web Interface Disabled"
+msgid "Web Interface"
 msgstr ""
 
-msgid "DDNS-RS Control panel"
-msgstr ""
-
-msgid "Due to browser security policies, the DDNS-RS interface https cannot be embedded directly."
+msgid "DDNS-RS provides its own web interface. Open it in a new browser tab to manage domains and providers."
 msgstr ""
 
 msgid "Loading logs..."
@@ -307,6 +304,9 @@ msgid "Failed to read logs: %s"
 msgstr ""
 
 msgid "Refresh every 5 seconds."
+msgstr ""
+
+msgid "DDNS-RS Control panel"
 msgstr ""
 
 msgid "Base Setting"

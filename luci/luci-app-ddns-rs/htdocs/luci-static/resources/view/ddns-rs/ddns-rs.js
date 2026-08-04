@@ -13,89 +13,84 @@ var callStatus = rpc.declare({
     expect: {}
 });
 
+function valueOrDash(value) {
+    return (value === null || value === undefined || value === '') ? '-' : value;
+}
+
+function setText(id, value) {
+    var node = document.getElementById(id);
+    if (node)
+        node.textContent = valueOrDash(value);
+}
+
+function renderRow(label, value, id) {
+    return E('div', { 'class': 'tr' }, [
+        E('div', { 'class': 'td left', 'style': 'width: 240px' }, label),
+        E('div', { 'class': 'td left', 'id': id }, valueOrDash(value))
+    ]);
+}
+
 return view.extend({
     load: function() {
-        return uci.load('ddns-rs');
+        return Promise.all([
+            uci.load('ddns-rs'),
+            L.resolveDefault(callStatus(), {})
+        ]);
     },
 
-    checkRunning: function() {
-        return L.resolveDefault(callStatus(), {}).then(function(status) {
-            status = status || {};
-            return { isRunning: !!(status.service && status.service.running) };
-        }).catch(function() {
-            return { isRunning: false };
-        });
-    },
-render: function() {
-    var self = this;
-    
-    return this.checkRunning().then(function(checkResult) {
-        var isRunning = checkResult.isRunning;
+    render: function(data) {
+        var uciData = data[0];
+        var status = data[1] || {};
+
+        var binary = status.binary || {};
+        var service = status.service || {};
+        var installed = !!binary.installed;
+        var running = !!service.running;
+
         var port = uci.get('ddns-rs', 'config', 'port') || '[::]:9876';
-        var noweb = uci.get('ddns-rs', 'config', 'noweb');
         port = port.split(':').pop();
-        
-        var container = E('div');
-        if (!isRunning || noweb === '1') {
-            if (!isRunning) {
-                var message = _('DDNS-RS Service Not Running');
-            } 
-            if (noweb === '1') {
-                var message = _('DDNS-RS Web Interface Disabled');
-            }
+        var webUrl = 'http://' + window.location.hostname + ':' + port;
 
-            container.appendChild(E('div', { 
-                style: 'text-align: center; padding: 2em;' 
-            }, [
-                E('img', {
-                    src: 'data:image/svg+xml;base64,PHN2ZyB2ZXJzaW9uPSIxLjEiIHhtbG5zPSJodHRwOi8vd3d3LnczLm9yZy8yMDAwL3N2ZyIgd2lkdGg9IjEwMjQiIGhlaWdodD0iMTAyNCIgdmlld0JveD0iMCAwIDEwMjQgMTAyNCI+PHBhdGggZmlsbD0iI2RmMDAwMCIgZD0iTTk0Mi40MjEgMjM0LjYyNGw4MC44MTEtODAuODExLTE1My4wNDUtMTUzLjA0NS04MC44MTEgODAuODExYy03OS45NTctNTEuNjI3LTE3NS4xNDctODEuNTc5LTI3Ny4zNzYtODEuNTc5LTI4Mi43NTIgMC01MTIgMjI5LjI0OC01MTIgNTEyIDAgMTAyLjIyOSAyOS45NTIgMTk3LjQxOSA4MS41NzkgMjc3LjM3NmwtODAuODExIDgwLjgxMSAxNTMuMDQ1IDE1My4wNDUgODAuODExLTgwLjgxMWM3OS45NTcgNTEuNjI3IDE3NS4xNDcgODEuNTc5IDI3Ny4zNzYgODEuNTc5IDI4Mi43NTIgMCA1MTItMjI5LjI0OCA1MTItNTEyIDAtMTAyLjIyOS0yOS45NTItMTk3LjQxOS04MS41NzktMjc3LjM3NnpNMTk0Ljk0NCA1MTJjMC0xNzUuMTA0IDE0MS45NTItMzE3LjA1NiAzMTcuMDU2LTMxNy4wNTYgNDggMCA5My40ODMgMTAuNjY3IDEzNC4yMjkgMjkuNzgxbC00MjEuNTQ3IDQyMS41NDdjLTE5LjA3Mi00MC43ODktMjkuNzM5LTg2LjI3Mi0yOS43MzktMTM0LjI3MnpNNTEyIDgyOS4wNTZjLTQ4IDAtOTMuNDgzLTEwLjY2Ny0xMzQuMjI5LTI5Ljc4MWw0MjEuNTQ3LTQyMS41NDdjMTkuMDcyIDQwLjc4OSAyOS43ODEgODYuMjcyIDI5Ljc4MSAxMzQuMjI5LTAuMDQzIDE3NS4xNDctMTQxLjk5NSAzMTcuMDk5LTMxNy4wOTkgMzE3LjA5OXoiLz48L3N2Zz4=',
-                    style: 'width: 100px; height: 100px; margin-bottom: 1em;'
-                }),
-                E('h2', {}, message)
-            ]));
-        } else {
-            var isHttps = window.location.protocol === 'https:';
-            
-            if (isHttps) {
-                var buttonContainer = E('div', {
-                    style: 'text-align: center; padding: 2em;'
-                }, [
-                    E('h2', {}, _('DDNS-RS Control panel')),
-                    E('p', {}, _('Due to browser security policies, the DDNS-RS interface https cannot be embedded directly.')),
-                    E('a', {
-                        href: 'http://' + window.location.hostname + ':' + port,
-                        target: '_blank',
-                        class: 'cbi-button cbi-button-apply',
-                        style: 'display: inline-block; margin-top: 1em; padding: 10px 20px; font-size: 16px; text-decoration: none; color: white;'
-                    }, _('Open Web Interface')),
-                ]);
-                container.appendChild(buttonContainer);
-            } else {
-                var iframe = E('iframe', {
-                    src: 'http://' + window.location.hostname + ':' + port,
-                    style: 'width: 100%; min-height: 100vh; border: none;'
-                });
-                container.appendChild(iframe);
-            }
-        }
-        
+        var container = E('div', { 'class': 'cbi-map' });
+
+        var statusCard = E('div', { 'class': 'cbi-section' }, [
+            E('h3', {}, _('DDNS-RS Service')),
+            renderRow(_('Installed'), installed ? _('Yes') : _('No'), 'ddns-rs-panel-installed'),
+            renderRow(_('Version'), binary.version, 'ddns-rs-panel-version'),
+            renderRow(_('Service'), running ? _('Running') : _('Stopped'), 'ddns-rs-panel-service')
+        ]);
+
+        var openBtn = E('a', {
+            'class': 'btn cbi-button cbi-button-action',
+            'href': webUrl,
+            'target': '_blank',
+            'rel': 'noopener'
+        }, _('Open Web Interface'));
+
+        var webCard = E('div', { 'class': 'cbi-section' }, [
+            E('h3', {}, _('Web Interface')),
+            E('p', {}, _('DDNS-RS provides its own web interface. Open it in a new browser tab to manage domains and providers.')),
+            E('div', { 'class': 'cbi-value' }, [ openBtn ])
+        ]);
+
+        container.appendChild(statusCard);
+        container.appendChild(webCard);
+
         poll.add(function() {
-            return self.checkRunning().then(function(checkResult) {
-                var newStatus = checkResult.isRunning;
-                if (newStatus !== isRunning) {
-                    window.location.reload();
+            return L.resolveDefault(callStatus(), {}).then(function(newStatus) {
+                var ns = newStatus || {};
+                var newRunning = !!(ns.service && ns.service.running);
+                if (newRunning !== running) {
+                    var el = document.getElementById('ddns-rs-panel-service');
+                    if (el)
+                        el.textContent = newRunning ? _('Running') : _('Stopped');
+                    running = newRunning;
                 }
             });
         }, 5);
-        
+
         poll.start();
-        
+
         return container;
-    });
-},
-
-
-    handleSaveApply: null,
-    handleSave: null,
-    handleReset: null
+    }
 });
