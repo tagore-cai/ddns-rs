@@ -106,7 +106,10 @@ const request = {
     }
     const response = await fetch(`${this.baseURL}${path}`, {
       method: 'POST',
-      body: data
+      body: data,
+      headers: {
+        'Content-Type': 'application/json'
+      }
     })
     if (response.redirected) {
       window.location.href = response.url
