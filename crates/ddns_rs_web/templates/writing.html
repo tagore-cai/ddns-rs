@@ -743,8 +743,20 @@
     showConf(configIndex);
   });
 
-  // 初始化dnsConf
-  reloadConf("{{.DnsConf}}");
+  // 初始化dnsConf：通过API读取配置，避免模板嵌入JSON时的转义问题
+  (async function initConfig() {
+    try {
+      const resp = await request.get("./getConfig");
+      if (resp && resp.DnsConf) {
+        reloadConf(JSON.stringify(resp.DnsConf));
+      } else {
+        reloadConf("[]");
+      }
+    } catch (err) {
+      console.error("Failed to load config:", err);
+      reloadConf("[]");
+    }
+  })();
 </script>
 
 <!-- 日志相关函数和日志初始化 -->

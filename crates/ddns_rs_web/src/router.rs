@@ -33,6 +33,12 @@ pub fn build_router(state: SharedState) -> Router {
                 auth::set_lang_authed(s.clone(), ci, headers, body)
             }
         }))
+        .route("/getConfig", get({
+            let s = state.clone();
+            move |ci: axum::extract::ConnectInfo<SocketAddr>, headers: axum::http::HeaderMap| {
+                auth::get_config_authed(s.clone(), ci, headers)
+            }
+        }))
         .route("/logs", get({
             let s = state.clone();
             move |ci: axum::extract::ConnectInfo<SocketAddr>, headers: axum::http::HeaderMap| {

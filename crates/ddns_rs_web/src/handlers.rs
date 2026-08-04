@@ -97,10 +97,13 @@ pub async fn login_func(state: SharedState, Json(data): Json<LoginData>) -> Resp
     }
 }
 
-pub async fn writing_page(state: SharedState) -> Response {
+/// Build the JSON context shared by writing_page and the /getConfig API.
+fn config_ctx(state: &SharedState) -> (serde_json::Value, ddns_rs_core::config::Config) {
     let conf = ddns_rs_core::config::get_config_cached().unwrap_or_default();
-    let mut st = state.0.config.lock().unwrap();
-    *st = conf.clone();
+    {
+        let mut st = state.0.config.lock().unwrap_or_else(std::sync::PoisonError::into_inner);
+        *st = conf.clone();
+    }
     let dns_conf = serde_json::to_string(&dns_conf_to_js(&conf)).unwrap_or("[]".into());
     let (ipv4, ipv6) = ddns_rs_core::netiface::get_net_interface().unwrap_or_default();
     let mut all_ifaces = std::collections::HashSet::new();
@@ -146,7 +149,33 @@ pub async fn writing_page(state: SharedState) -> Response {
         "Ipv6": to_json(ipv6),
         "AllInterfaces": to_json(all_ifaces_vec),
     });
+    (ctx, conf)
+}
+
+pub async fn writing_page(state: SharedState) -> Response {
+    let (ctx, _conf) = config_ctx(&state);
     render_template("writing.html", &ctx)
+}
+
+/// Return the full configuration as JSON so the web UI can load it via an
+/// API instead of relying on template-embedded JSON (which breaks on quotes
+/// and special characters).
+pub async fn get_config(state: SharedState) -> Response {
+    let (ctx, _conf) = config_ctx(&state);
+    let dns_conf = ctx.get("DnsConf").and_then(|v| v.as_str()).unwrap_or("[]");
+    let body = serde_json::json!({
+        "DnsConf": serde_json::from_str::<serde_json::Value>(dns_conf).unwrap_or(serde_json::json!([])),
+        "NotAllowWanAccess": ctx.get("NotAllowWanAccess"),
+        "Username": ctx.get("Username"),
+        "Lang": ctx.get("Lang"),
+        "WebhookURL": ctx.get("WebhookURL"),
+        "WebhookRequestBody": ctx.get("WebhookRequestBody"),
+        "WebhookHeaders": ctx.get("WebhookHeaders"),
+        "Ipv4": ctx.get("Ipv4"),
+        "Ipv6": ctx.get("Ipv6"),
+        "AllInterfaces": ctx.get("AllInterfaces"),
+    });
+    crate::json::return_json_raw(&body.to_string())
 }
 
 pub async fn save(_state: SharedState, body: String) -> Response {

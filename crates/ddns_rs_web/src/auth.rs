@@ -100,6 +100,21 @@ pub async fn set_lang_authed(
     handlers::set_lang(state, body).await
 }
 
+pub async fn get_config_authed(
+    state: SharedState,
+    axum::extract::ConnectInfo(addr): axum::extract::ConnectInfo<SocketAddr>,
+    headers: axum::http::HeaderMap,
+) -> Response {
+    let remote = addr.to_string();
+    if !authorized(&state, headers.get(header::COOKIE).and_then(|v| v.to_str().ok()), &remote) {
+        if is_public_and_blocked(&remote) {
+            return auth_forbidden();
+        }
+        return redirect_login();
+    }
+    handlers::get_config(state).await
+}
+
 pub async fn logs_authed(
     state: SharedState,
     axum::extract::ConnectInfo(addr): axum::extract::ConnectInfo<SocketAddr>,
