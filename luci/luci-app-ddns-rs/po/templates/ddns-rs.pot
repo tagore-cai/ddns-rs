@@ -114,24 +114,6 @@ msgstr ""
 msgid "If the binary is missing, it will be downloaded from the default release. If installed, it will check for the latest version and update automatically."
 msgstr ""
 
-msgid "Already the latest version"
-msgstr ""
-
-msgid "New version available"
-msgstr ""
-
-msgid "Update successful"
-msgstr ""
-
-msgid "Download update failed"
-msgstr ""
-
-msgid "Update check failed"
-msgstr ""
-
-msgid "Update status unknown"
-msgstr ""
-
 msgid "RUNNING"
 msgstr ""
 
@@ -187,15 +169,6 @@ msgid "DDNS-RS service restarted successfully"
 msgstr ""
 
 msgid "Failed to restart service:"
-msgstr ""
-
-msgid "Updating, please wait..."
-msgstr ""
-
-msgid "Current Version"
-msgstr ""
-
-msgid "Update failed"
 msgstr ""
 
 msgid "DDNS-RS automatically obtains your public IPv4 or IPv6 address and resolves it to the corresponding domain name service."
@@ -267,10 +240,7 @@ msgstr ""
 msgid "Reset"
 msgstr ""
 
-msgid "Check Update"
-msgstr ""
-
-msgid "Check"
+msgid "Current Version"
 msgstr ""
 
 msgid "DDNS-RS Service"
@@ -312,9 +282,9 @@ msgstr ""
 msgid "Base Setting"
 msgstr ""
 
-msgid "Log"
+msgid "Binary"
 msgstr ""
 
-msgid "Binary"
+msgid "Log"
 msgstr ""
 

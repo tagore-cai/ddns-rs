@@ -20,21 +20,6 @@ const getStatusInfo = rpc.declare({
     expect: {}
 });
 
-const getUpdateInfo = rpc.declare({
-    object: 'luci.ddns-rs',
-    method: 'last_update',
-    expect: { 'update': {} }
-});
-
-const updateMessageMap = {
-    'Already the latest version': _('Already the latest version'),
-    'New version available': _('New version available'),
-    'Update successful': _('Update successful'),
-    'Download update failed': _('Download update failed'),
-    'Update check failed': _('Update check failed'),
-    'Update status unknown': _('Update status unknown')
-};
-
 function checkProcess() {
     return L.resolveDefault(getStatusInfo(), {}).then(function(status) {
         status = status || {};
@@ -58,14 +43,6 @@ function getVersionInfo() {
     });
 }
 
-function checkUpdateStatus() {
-    return L.resolveDefault(getUpdateInfo(), {}).then(function(result) {
-        return (result && result.update) || result || {};
-    }).catch(function(error) {
-        console.error('Failed to get update info:', error);
-        return {};
-    });
-}
 function extractPortNumber(portValue) {
     if (!portValue) return '9876';
     if (portValue.includes(':')) {
@@ -92,36 +69,6 @@ function renderStatus(isRunning, listen_port, noweb, version) {
     }
     
     return html;
-}
-
-function renderUpdateStatus(updateInfo) {
-    if (!updateInfo || !updateInfo.status) {
-        return '<span style="color:orange"> ⚠ ' + _('Update status unknown') + '</span>';
-    }
-    
-    var status = updateInfo.status;
-    var message = updateInfo.message || '';
-    
-    for (let [en, zh] of Object.entries(updateMessageMap)) {
-        if (message.includes(en)) {
-            message = message.replace(en, zh);
-            break;
-        }
-    }
-    
-    switch(status) {
-        case 'updated':
-            return String.format('<span style="color:green">✓ %s</span>', message);
-        case 'update_available':
-            return String.format('<span style="color:blue">↻ %s</span>', message);
-        case 'latest':
-            return String.format('<span style="color:green">✓ %s</span>', message);
-        case 'download_failed':
-        case 'check_failed':
-            return String.format('<span style="color:red">✗ %s</span>', message);
-        default:
-            return String.format('<span style="color:orange">? %s</span>', message);
-    }
 }
 
 return view.extend({
@@ -224,51 +171,6 @@ return view.extend({
     }
     },
 
-    handleUpdate: async function () {
-        try {
-            var updateView = document.getElementById('update_status');
-            if (updateView) {
-                updateView.innerHTML = '<span class="spinning"></span> ' + _('Updating, please wait...');
-            }
-            const updateInfo = await checkUpdateStatus();
-            if (updateView) {
-                updateView.innerHTML = renderUpdateStatus(updateInfo);
-            }
-
-            if (updateInfo.update_successful || updateInfo.status === 'updated') {
-                if (window.statusPoll) {
-                    window.statusPoll();
-                }
-                
-                setTimeout(() => {
-                    var updateView = document.getElementById('update_status');
-                    if (updateView) {
-                        getVersionInfo().then(function(versionInfo) {
-                            var version = versionInfo.version || '';
-                            updateView.innerHTML = String.format('<span style="color:green">✓ %s v%s</span>', 
-                                _('Current Version'), version);
-                        });
-                    }
-                }, 3000);
-            }
-
-        } catch (error) {
-            console.error('Update failed:', error);
-            var updateView = document.getElementById('update_status');
-            if (updateView) {
-                updateView.innerHTML = '<span style="color:red">✗ ' + _('Update failed') + '</span>';
-
-                setTimeout(() => {
-                    getVersionInfo().then(function(versionInfo) {
-                        var version = versionInfo.version || '';
-                        updateView.innerHTML = String.format('<span>%s v%s</span>', 
-                            _('Current Version'), version);
-                    });
-                }, 5000);
-            }
-        }
-    },
-    
     render: function(data) {
         var m, s, o;
         
@@ -355,12 +257,7 @@ return view.extend({
         o.inputstyle = 'apply';
         o.onclick = L.bind(this.handleResetPassword, this, data);
 
-        o = s.option(form.Button, '_update', _('Check Update'));
-        o.inputtitle = _('Check');
-        o.inputstyle = 'apply';
-        o.onclick = L.bind(this.handleUpdate, this, data);
-
-        o = s.option(form.DummyValue, '_update_status', _('Current Version'));
+        o = s.option(form.DummyValue, '_version', _('Current Version'));
         o.rawhtml = true;
         
         var currentVersion = '';

@@ -28,21 +28,21 @@
              }
     },
 
-    "admin/services/ddns-rs/log": {
-		"title": "Log",
+    "admin/services/ddns-rs/binary": {
+		"title": "Binary",
              "order": 30,
              "action": {
                "type": "view",
-               "path": "ddns-rs/log"
+               "path": "ddns-rs/binary"
              }
     },
 
-    "admin/services/ddns-rs/binary": {
-		"title": "Binary",
+    "admin/services/ddns-rs/log": {
+		"title": "Log",
              "order": 40,
              "action": {
                "type": "view",
-               "path": "ddns-rs/binary"
+               "path": "ddns-rs/log"
              }
     }
 
