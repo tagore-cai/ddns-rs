@@ -155,7 +155,7 @@ pub fn get_config_file_path() -> PathBuf {
 
 /// Load config, with caching.
 pub fn get_config_cached() -> Result<Config, String> {
-    let mut cache = CACHE.lock().unwrap();
+    let mut cache = CACHE.lock().unwrap_or_else(std::sync::PoisonError::into_inner);
     if let Some(c) = cache.as_ref() {
         return Ok(c.clone());
     }
@@ -221,13 +221,20 @@ pub fn save_config(conf: &Config) -> Result<(), String> {
     std::fs::write(&path, content).map_err(|e| e.to_string())?;
     crate::log_msg!("配置文件已保存在: %s", path.display());
 
-    *CACHE.lock().unwrap() = None;
+    *CACHE.lock().unwrap_or_else(std::sync::PoisonError::into_inner) = None;
     Ok(())
 }
 
 /// Update the cached config (used after save).
 pub fn update_cache(conf: &Config) {
-    *CACHE.lock().unwrap() = Some(conf.clone());
+    *CACHE.lock().unwrap_or_else(std::sync::PoisonError::into_inner) = Some(conf.clone());
+}
+
+/// Clear the in-memory config cache. Primarily useful in tests where the
+/// config path env changes between test cases; the process normally uses a
+/// single config path so the cache never needs manual clearing.
+pub fn clear_config_cache() {
+    *CACHE.lock().unwrap_or_else(std::sync::PoisonError::into_inner) = None;
 }
 
 /// Reset the username and password in the config file.

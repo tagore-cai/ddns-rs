@@ -202,3 +202,41 @@ impl crate::engine::DnsProvider for Dnspod {
         self.domains.clone()
     }
 }
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn test_parse_record_list() {
+        let s: RecordListResp = serde_json::from_str(
+            r#"{"status":{"code":"1","message":"Action completed successful"},"records":[{"id":"123","value":"1.2.3.4"},{"id":"456","value":"1.2.3.5"}]}"#,
+        )
+        .unwrap();
+        assert_eq!(s.status.code, "1");
+        assert_eq!(s.records.as_ref().unwrap().len(), 2);
+        assert_eq!(s.records.as_ref().unwrap()[0].id, "123");
+    }
+
+    #[test]
+    fn test_parse_record_list_no_records() {
+        // DNSPod omits records when there are none.
+        let s: RecordListResp =
+            serde_json::from_str(r#"{"status":{"code":"1","message":"ok"}}"#).unwrap();
+        assert!(s.records.is_none(), "missing records must parse as None");
+    }
+
+    #[test]
+    fn test_parse_record_list_null_records() {
+        let s: RecordListResp =
+            serde_json::from_str(r#"{"status":{"code":"1","message":"ok"},"records":null}"#).unwrap();
+        assert!(s.records.is_none(), "null records must parse as None");
+    }
+
+    #[test]
+    fn test_parse_status_resp() {
+        let s: StatusResp =
+            serde_json::from_str(r#"{"status":{"code":"1","message":"ok"}}"#).unwrap();
+        assert_eq!(s.status.code, "1");
+    }
+}

@@ -217,6 +217,32 @@ mod tests {
         // password (37.6 bits) passes at 30.
         assert!(validate("password", 30.0));
     }
+
+    #[test]
+    fn test_admin12345_passes_both_thresholds() {
+        // admin12345 is the default LuCI web UI credential; it must satisfy
+        // both the 25-bit (NotAllowWanAccess) and 30-bit thresholds.
+        assert!(validate("admin12345", 25.0), "admin12345 must pass 25 bits");
+        assert!(validate("admin12345", 30.0), "admin12345 must pass 30 bits");
+    }
+
+    #[test]
+    fn test_empty_and_single_char_rejected() {
+        assert!(!validate("", 25.0));
+        assert!(!validate("a", 25.0));
+        assert!(!validate("12345", 25.0));
+        assert!(!validate("admin", 30.0));
+    }
+
+    #[test]
+    fn test_repeated_and_sequential_rejected() {
+        // Repeated and sequential characters are penalized by the entropy
+        // algorithm (mirrors go-password-validator).
+        assert!(!validate("aaaaaaaaaaaa", 25.0));
+        assert!(!validate("abcdefghij", 30.0));
+        assert!(!validate("1234567890", 30.0));
+        assert!(!validate("qwertyuiop", 30.0));
+    }
 }
 
 /// Debug helper: print intermediate length steps.

@@ -39,3 +39,42 @@ fn split_ipv6_candidates(text: &str) -> Vec<String> {
     }
     result
 }
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn test_find_ipv6_plain() {
+        assert_eq!(find_ipv6("240e:390:c38a:9b00::1"), Some("240e:390:c38a:9b00::1".to_string()));
+    }
+
+    #[test]
+    fn test_find_ipv6_in_text() {
+        let text = "my address is 240e:390:c38a:9b00::1 and it's great";
+        assert_eq!(find_ipv6(text), Some("240e:390:c38a:9b00::1".to_string()));
+    }
+
+    #[test]
+    fn test_find_ipv4_mapped_ipv6() {
+        // IPv4-mapped IPv6 like ::ffff:192.168.1.102 must be found as IPv6.
+        assert_eq!(find_ipv6("::ffff:192.168.1.102"), Some("::ffff:192.168.1.102".to_string()));
+    }
+
+    #[test]
+    fn test_find_ipv6_none_for_ipv4() {
+        assert_eq!(find_ipv6("192.168.1.102"), None);
+    }
+
+    #[test]
+    fn test_find_ipv6_none_for_empty() {
+        assert_eq!(find_ipv6(""), None);
+    }
+
+    #[test]
+    fn test_find_ipv6_none_for_garbage() {
+        assert_eq!(find_ipv6("no ip here at all"), None);
+        // Bare :: is a valid IPv6 unspecified address.
+        assert_eq!(find_ipv6("::"), Some("::".to_string()));
+    }
+}

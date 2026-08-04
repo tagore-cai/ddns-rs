@@ -226,3 +226,52 @@ impl crate::engine::DnsProvider for Cloudflare {
         self.domains.clone()
     }
 }
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn test_parse_zones_resp() {
+        let s: ZonesResp =
+            serde_json::from_str(r#"{"success":true,"messages":[],"result":[{"id":"z1","name":"example.com"}]}"#)
+                .unwrap();
+        assert!(s.success);
+        assert_eq!(s.result.as_ref().unwrap().len(), 1);
+        assert_eq!(s.result.as_ref().unwrap()[0].name, "example.com");
+    }
+
+    #[test]
+    fn test_parse_zones_resp_null_result() {
+        // Cloudflare returns "result":null when a zone is not found.
+        let s: ZonesResp =
+            serde_json::from_str(r#"{"success":true,"messages":[],"result":null}"#).unwrap();
+        assert!(s.success);
+        assert!(s.result.is_none(), "null result must parse as None");
+    }
+
+    #[test]
+    fn test_parse_records_resp() {
+        let s: RecordsResp = serde_json::from_str(
+            r#"{"success":true,"messages":[],"result":[{"id":"r1","name":"www","type":"A","content":"1.2.3.4","proxied":false,"ttl":1,"comment":""}]}"#,
+        )
+        .unwrap();
+        assert!(s.success);
+        let rec = &s.result.as_ref().unwrap()[0];
+        assert_eq!(rec.record_type, "A");
+        assert_eq!(rec.content, "1.2.3.4");
+    }
+
+    #[test]
+    fn test_parse_records_resp_null_result() {
+        // No records -> result is null.
+        let s: RecordsResp = serde_json::from_str(r#"{"success":true,"messages":[],"result":null}"#).unwrap();
+        assert!(s.result.is_none());
+    }
+
+    #[test]
+    fn test_parse_status_resp() {
+        let s: StatusResp = serde_json::from_str(r#"{"success":true,"messages":[],"result":{"id":"r1"}}"#).unwrap();
+        assert!(s.success);
+    }
+}
