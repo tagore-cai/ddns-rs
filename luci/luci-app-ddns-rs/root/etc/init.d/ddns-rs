@@ -84,6 +84,10 @@ start_service() {
         return 1
     fi
 
+    # Always ensure the config directory exists and is writable by the
+    # ddns-rs user, so the web UI can save its config on first login.
+    init_yaml
+
     config_foreach start_instance 'basic'
 }
 

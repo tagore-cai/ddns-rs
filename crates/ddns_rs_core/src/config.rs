@@ -213,6 +213,11 @@ pub fn compatible_config(conf: &mut Config) {
 pub fn save_config(conf: &Config) -> Result<(), String> {
     let content = serde_yaml::to_string(conf).map_err(|e| e.to_string())?;
     let path = get_config_file_path();
+    // Create the parent directory so the config can be saved even on a
+    // fresh install where /etc/ddns-rs does not exist yet.
+    if let Some(dir) = path.parent() {
+        std::fs::create_dir_all(dir).map_err(|e| e.to_string())?;
+    }
     std::fs::write(&path, content).map_err(|e| e.to_string())?;
     crate::log_msg!("配置文件已保存在: %s", path.display());
 
@@ -225,21 +230,34 @@ pub fn update_cache(conf: &Config) {
     *CACHE.lock().unwrap() = Some(conf.clone());
 }
 
-/// Reset password in the config file.
+/// Reset the username and password in the config file.
+///
+/// Resets both the username (to "admin") and the password so that the
+/// default web interface login (admin/admin12345 shown by the LuCI plugin)
+/// always works, including on fresh configs where the file is missing or
+/// the User section is empty.
 pub fn reset_password(new_password: &str) {
-    let conf = match get_config_cached() {
+    let mut conf = match get_config_cached() {
         Ok(c) => c,
-        Err(e) => {
-            crate::log_msg!("配置文件 %s 不存在, 可通过-c指定配置文件", e);
-            return;
+        Err(_) => {
+            // Config file missing: create a default one so the reset works
+            // even on a brand-new install.
+            crate::log_msg!(
+                "配置文件不存在, 创建默认配置并重置账号密码: %s",
+                get_config_file_path().display()
+            );
+            Config::default()
         }
     };
     crate::logger::init_lang(&conf.Lang);
 
     match check_password(new_password, conf.NotAllowWanAccess) {
         Ok(hashed) => {
-            let mut conf = conf;
+            conf.User.Username = "admin".to_string();
             conf.User.Password = hashed;
+            if let Some(p) = get_config_file_path().parent() {
+                let _ = std::fs::create_dir_all(p);
+            }
             match save_config(&conf) {
                 Ok(_) => crate::log_msg!(
                     "用户名 %s 的密码已重置成功! 请重启ddns-go",
