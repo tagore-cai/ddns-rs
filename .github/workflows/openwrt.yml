@@ -25,6 +25,12 @@ jobs:
         with:
           node-version: 22
 
+      - name: Build Vue frontend
+        run: |
+          cd luci
+          npm ci
+          npm run build
+
       - name: Resolve version
         id: version
         shell: bash

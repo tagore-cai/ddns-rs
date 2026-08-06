@@ -2,3 +2,6 @@
 /.DS_Store
 **/.DS_Store
 /dist
+luci/node_modules/
+luci/vite-app/dist/
+luci/luci-app-ddns-rs/htdocs/luci-static/resources/ddns-rs-app/

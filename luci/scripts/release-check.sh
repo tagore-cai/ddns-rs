@@ -24,6 +24,19 @@ need_cmd sha256sum
 need_cmd tar
 
 SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
+LUCI_DIR="$(cd "$SCRIPT_DIR/.." && pwd)"
+
+# Build the Vue frontend if it hasn't been built yet (the bundle is a
+# build artifact and not committed).
+BUNDLE_DIR="$LUCI_DIR/luci-app-ddns-rs/htdocs/luci-static/resources/ddns-rs-app"
+if [ ! -f "$BUNDLE_DIR/ddns-rs-app.js" ]; then
+	need_cmd npm
+	(
+		cd "$LUCI_DIR"
+		npm ci
+		npm run build
+	)
+fi
 
 "$SCRIPT_DIR/check.sh"
 "$SCRIPT_DIR/build-luci-package.sh" "$VERSION" "$OUT_DIR"

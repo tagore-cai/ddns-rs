@@ -1,0 +1,20 @@
+{
+  "name": "ddns-rs-luci",
+  "version": "0.2.2",
+  "private": true,
+  "type": "module",
+  "description": "ddns-rs LuCI frontend built with Vite + Vue 3",
+  "scripts": {
+    "dev": "vite",
+    "build": "vite build",
+    "package": "vite build && sh scripts/build-luci-package.sh 0.2.2 dist",
+    "check": "node scripts/vite-luci.mjs --check"
+  },
+  "dependencies": {
+    "vue": "^3.5.13"
+  },
+  "devDependencies": {
+    "@vitejs/plugin-vue": "^5.2.1",
+    "vite": "^6.0.5"
+  }
+}

@@ -16,16 +16,31 @@ node -e "for (const f of ['$R/usr/share/luci/menu.d/luci-app-ddns-rs.json','$R/u
 node <<'NODE'
 const fs = require('fs');
 
-const viewDir = 'luci/luci-app-ddns-rs/htdocs/luci-static/resources/view/ddns-rs';
-const jsFiles = fs.readdirSync(viewDir).filter(f => f.endsWith('.js'));
-
+// i18n strings come from:
+//  1. LuCI view scripts: _("...")
+//  2. Vue app i18n.js builtin map keys
 const required = new Set();
-for (const file of jsFiles) {
-	const source = fs.readFileSync(viewDir + '/' + file, 'utf8');
-	const re = /_\(\s*(['"])((?:\\.|[^\\])*?)\1\s*\)/g;
+
+// 1. LuCI view scripts
+const viewDir = 'luci/luci-app-ddns-rs/htdocs/luci-static/resources/view/ddns-rs';
+if (fs.existsSync(viewDir)) {
+	for (const file of fs.readdirSync(viewDir).filter(f => f.endsWith('.js'))) {
+		const source = fs.readFileSync(viewDir + '/' + file, 'utf8');
+		const re = /_\(\s*(['"])((?:\\.|[^\\])*?)\1\s*\)/g;
+		let match;
+		while ((match = re.exec(source)))
+			required.add(Function(`return ${match[1]}${match[2]}${match[1]}`)());
+	}
+}
+
+// 2. Vue app builtin i18n map
+const i18nFile = 'luci/vite-app/src/i18n.js';
+if (fs.existsSync(i18nFile)) {
+	const source = fs.readFileSync(i18nFile, 'utf8');
+	const re = /^[ \t]*'((?:\\.|[^'\\])*)':/gm;
 	let match;
 	while ((match = re.exec(source)))
-		required.add(Function(`return ${match[1]}${match[2]}${match[1]}`)());
+		required.add(JSON.parse(`"${match[1]}"`));
 }
 
 const menu = JSON.parse(fs.readFileSync('luci/luci-app-ddns-rs/root/usr/share/luci/menu.d/luci-app-ddns-rs.json', 'utf8'));
