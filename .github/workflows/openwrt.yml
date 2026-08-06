@@ -25,13 +25,11 @@ jobs:
         with:
           node-version: 22
 
-      - name: Build Vue frontend and packages
+      - name: Build Vue frontend
         run: |
           cd luci
           npm ci
-          npm run build
-          cd ..
-          ls -la dist/
+          npm run build:no-pkg
 
       - name: Resolve version
         id: version
@@ -45,12 +43,8 @@ jobs:
             echo "value=${v}" >> "$GITHUB_OUTPUT"
           fi
 
-      - name: Run static and integration checks
-        env:
-          PKG_VERSION: "${{ steps.version.outputs.value }}-r1"
-        run: |
-          luci/scripts/check.sh
-          luci/scripts/integration-check.sh dist
+      - name: Build packages and run checks
+        run: luci/scripts/release-check.sh "${{ steps.version.outputs.value }}" dist
 
       - name: Publish release
         uses: softprops/action-gh-release@v3
