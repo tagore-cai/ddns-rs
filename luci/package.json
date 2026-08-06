@@ -7,8 +7,8 @@
   "scripts": {
     "dev": "vite",
     "build": "vite build",
-    "package": "vite build && sh scripts/build-luci-package.sh 0.3.0 dist",
-    "check": "node scripts/vite-luci.mjs --check"
+    "build:no-pkg": "LUCI_PKG=no vite build",
+    "check": "LUCI_CHECK=1 vite build"
   },
   "dependencies": {
     "vue": "^3.5.13"
