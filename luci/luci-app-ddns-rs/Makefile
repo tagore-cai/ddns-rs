@@ -11,7 +11,7 @@
 include $(TOPDIR)/rules.mk
 
 PKG_NAME:=luci-app-ddns-rs
-PKG_VERSION:=0.3.1
+PKG_VERSION:=0.3.2
 PKG_RELEASE:=1
 
 PKG_LICENSE:=MIT

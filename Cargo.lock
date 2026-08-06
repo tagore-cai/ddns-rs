@@ -408,7 +408,7 @@ checksum = "a4ae5f15dda3c708c0ade84bfee31ccab44a3da4f88015ed22f63732abe300c8"
 
 [[package]]
 name = "ddns-rs-cli"
-version = "0.3.1"
+version = "0.3.2"
 dependencies = [
  "anyhow",
  "clap",
@@ -429,7 +429,7 @@ dependencies = [
 
 [[package]]
 name = "ddns-rs-core"
-version = "0.3.1"
+version = "0.3.2"
 dependencies = [
  "async-trait",
  "base64 0.23.0",
@@ -458,7 +458,7 @@ dependencies = [
 
 [[package]]
 name = "ddns-rs-providers"
-version = "0.3.1"
+version = "0.3.2"
 dependencies = [
  "async-trait",
  "base64 0.23.0",
@@ -480,7 +480,7 @@ dependencies = [
 
 [[package]]
 name = "ddns-rs-web"
-version = "0.3.1"
+version = "0.3.2"
 dependencies = [
  "anyhow",
  "axum",

@@ -22,7 +22,7 @@ LOCK_DIR="$PROGRESS_DIR/operation.lock"
 LOCK_HELD=0
 
 DEFAULT_REPO="tagore-cai/ddns-rs"
-DEFAULT_VERSION="0.3.1"
+DEFAULT_VERSION="0.3.2"
 
 # ---------------------------------------------------------------- json utils
 

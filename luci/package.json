@@ -1,6 +1,6 @@
 {
   "name": "ddns-rs-luci",
-  "version": "0.3.1",
+  "version": "0.3.2",
   "private": true,
   "type": "module",
   "description": "ddns-rs LuCI frontend built with Vite + Vue 3",
