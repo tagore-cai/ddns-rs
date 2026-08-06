@@ -7,7 +7,6 @@
       <button class="btn cbi-button-action" :disabled="busy" @click="pickFile">
         {{ t('Upload & Install') }}
       </button>
-      <input ref="fileInput" type="file" style="display:none" @change="onFileChosen" />
     </div>
 
     <!-- install from URL -->
@@ -44,7 +43,7 @@
 
 <script setup>
 import { ref, reactive, onUnmounted } from 'vue'
-import { declareApi, call } from '../luci-rpc'
+import { declareApi, luciClients } from '../luci-rpc'
 import { useI18n } from '../i18n'
 
 const { t } = useI18n()
@@ -56,7 +55,6 @@ const api = declareApi('luci.ddns-rs', [
   'binary_progress'
 ])
 
-const fileInput = ref(null)
 const url = ref('')
 const busy = ref(false)
 const log = ref('')
@@ -107,37 +105,20 @@ function runAction(fn) {
     })
 }
 
-function pickFile() {
-  fileInput.value && fileInput.value.click()
-}
-
-async function onFileChosen(ev) {
-  const file = ev.target.files && ev.target.files[0]
-  ev.target.value = ''
-  if (!file)
-    return
-
+async function pickFile() {
+  const { ui } = await luciClients()
   uploadPath = `/tmp/ddns-rs-upload-${Date.now()}`
-
-  const data = new FormData()
-  data.append('sessionid', window.L && L.env.sessionid || '00000000000000000000000000000000')
-  data.append('filename', uploadPath)
-  data.append('filedata', file)
 
   setBusy(true)
   try {
-    const xhr = await fetch('/cgi-bin/luci/cgi-upload', {
-      method: 'POST',
-      credentials: 'same-origin',
-      body: data
-    })
-    if (!xhr.ok)
-      throw new Error(`upload HTTP ${xhr.status}`)
+    await ui.uploadFile(uploadPath)
     const reply = await api.binary_upload({ path: uploadPath })
     showOutcome(reply)
   }
   catch (err) {
     setBusy(false)
+    if (err && err.message && err.message.indexOf('cancelled') >= 0)
+      return
     errorMsg.value = String(err)
   }
 }

@@ -1,71 +1,81 @@
-// luci-rpc.js - minimal ubus JSON-RPC client for ddns-rs LuCI.
-// Mirrors LuCI's rpc protocol: POST {jsonrpc, id, method: 'call',
-// params: [sessionid, object, method, params]} to /admin/ubus.
-// Session id is read from LuCI's global L.env (available because the SPA
-// is embedded in a LuCI page). If L is absent (e.g. standalone dev), the
-// caller can set sessionId explicitly.
+// luci-rpc.js - access LuCI's native rpc/uci/fs clients from the Vue SPA.
+//
+// The Vue app is loaded inside a LuCI page (window.L available after the
+// page initializes). Instead of re-implementing the ubus JSON-RPC client
+// (session/CSRF/path probing), we reuse LuCI's own modules via L.require,
+// exactly as LuCI's own init does:
+//
+//   Promise.all([domReady, require('ui'), require('rpc'), require('form')])
+//
+// Returns a Promise that resolves to { rpc, uci, fs } once LuCI is ready.
 
-let rpcSessionID = null
-let rpcRequestID = 1
-const rpcBaseURL = '/cgi-bin/luci/admin/ubus'
+let cached = null
 
-function getSessionID() {
-  if (rpcSessionID != null)
-    return rpcSessionID
-  if (window.L && window.L.env && window.L.env.sessionid)
-    return window.L.env.sessionid
-  return '00000000000000000000000000000000'
-}
-
-export function setSessionID(sid) {
-  rpcSessionID = sid
+// Resolve once the DOM is ready AND window.L exists.
+function luciReady() {
+  return new Promise((resolve) => {
+    if (window.L) {
+      resolve(window.L)
+      return
+    }
+    document.addEventListener('DOMContentLoaded', function wait() {
+      if (window.L) {
+        resolve(window.L)
+      }
+      else {
+        // LuCI sets window.L shortly after DOMContentLoaded; poll briefly.
+        let n = 0
+        const timer = setInterval(() => {
+          n++
+          if (window.L || n > 100) {
+            clearInterval(timer)
+            resolve(window.L)
+          }
+        }, 50)
+      }
+    })
+  })
 }
 
 /**
- * Invoke a rpcd method on the given object.
- * @param {string} object  e.g. 'luci.ddns-rs'
- * @param {string} method  e.g. 'binary_status'
- * @param {object} params  positional or object params
- * @returns {Promise<any>} the ubus result payload
+ * Load LuCI's native clients. Cached; safe to call multiple times.
+ * @returns {Promise<{rpc: Object, uci: Object, fs: Object}>}
+ */
+export function luciClients() {
+  if (cached)
+    return cached
+
+  cached = luciReady().then((L) => Promise.all([
+    L.require('rpc'),
+    L.require('uci'),
+    L.require('fs'),
+    L.require('ui')
+  ]).then(([rpc, uci, fs, ui]) => ({ rpc, uci, fs, ui })))
+
+  return cached
+}
+
+/**
+ * Call a rpcd method via LuCI's rpc module.
+ * @param {string} object e.g. 'luci.ddns-rs'
+ * @param {string} method
+ * @param {object} [params]
+ * @returns {Promise<any>}
  */
 export async function call(object, method, params) {
-  const msg = {
-    jsonrpc: '2.0',
-    id: rpcRequestID++,
-    method: 'call',
-    params: [getSessionID(), object, method, params || {}]
-  }
-
-  const resp = await fetch(rpcBaseURL, {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    credentials: 'same-origin',
-    body: JSON.stringify(msg)
+  const { rpc } = await luciClients()
+  const fn = rpc.declare({
+    object,
+    method,
+    expect: {}
   })
-
-  if (!resp.ok)
-    throw new Error(`RPC HTTP ${resp.status}`)
-
-  const data = await resp.json()
-
-  if (data.error && data.error.code && data.error.message)
-    throw new Error(`RPC ${data.error.message}`)
-
-  if (Array.isArray(data.result)) {
-    const [code, payload] = data.result
-    if (code !== 0)
-      throw new Error(`ubus error ${code}`)
-    return payload
-  }
-
-  return data.result
+  // rpc.declare returns a function; for methods with named params use
+  // positional args if given, otherwise an object.
+  return params ? fn(params) : fn()
 }
 
 /**
  * Create a typed call wrapper for a method.
- * @param {string} object
- * @param {string} method
- * @returns {function(params?: object): Promise<any>}
  */
 export function createApi(object, method) {
   return (params) => call(object, method, params)
@@ -80,41 +90,48 @@ export function declareApi(object, methods) {
 }
 
 /**
- * uci - read/write UCI config via ubus (mirrors LuCI's uci module).
- * @param {string} config e.g. 'ddns-rs'
- * @returns {{ load: function(): Promise<object>, set: function(section, values): Promise<*> }}
+ * uci - read/write UCI config via LuCI's uci module.
+ * Returns a synchronous wrapper; each method resolves the client lazily.
  */
 export function uci(config) {
-  const api = declareApi('uci', ['get', 'set', 'save', 'apply', 'commit'])
-
   return {
-    /** Load the whole config; resolves to the values object. */
     async load() {
-      const res = await api.get(config)
-      return (res && res.values) || {}
+      const { uci: u } = await luciClients()
+      await u.load(config)
+      return u
     },
-    /** Set option values on a section and commit. */
+    async get(section, opt) {
+      const u = await this.load()
+      return u.get(config, section, opt)
+    },
     async set(section, values) {
-      await api.set(config, section, values)
-      await api.save(config)
+      const u = await this.load()
+      await u.set(config, section, values)
+    },
+    async save() {
+      const u = await this.load()
+      await u.save()
+    },
+    async apply(timeout) {
+      const u = await this.load()
+      await u.apply(timeout || 10)
     }
   }
 }
 
 /**
- * file - run commands / read files via ubus (mirrors LuCI's fs module).
- * @returns {{ exec: function(cmd, args?): Promise<{code,stdout,stderr}>, read: function(path): Promise<string> }}
+ * file - run commands / read files via LuCI's fs module.
+ * Returns a synchronous wrapper; each method resolves the client lazily.
  */
 export function file() {
-  const api = declareApi('file', ['exec', 'read', 'write'])
-
   return {
-    async exec(command, args) {
-      return api.exec(command, args || [], {})
+    async exec(command, params) {
+      const { fs } = await luciClients()
+      return fs.exec(command, params || [], {})
     },
     async read(path) {
-      const res = await api.read(path)
-      return (res && res.data) || ''
+      const { fs } = await luciClients()
+      return fs.read(path)
     }
   }
 }

@@ -123,8 +123,8 @@ async function refreshStatus() {
 
 async function load() {
   try {
-    const values = await uciConf.load()
-    const cfg = (values && values.config) || {}
+    const u = await uciConf.load()
+    const cfg = u.get('config') || {}
     form.enabled = cfg.enabled || '0'
     form.port = cfg.port || '[::]:9876'
     form.time = parseInt(cfg.time || '300', 10)
