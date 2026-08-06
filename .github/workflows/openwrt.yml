@@ -30,6 +30,8 @@ jobs:
           cd luci
           npm ci
           npm run build
+          cd ..
+          ls -la dist/
 
       - name: Resolve version
         id: version
@@ -58,4 +60,5 @@ jobs:
             dist/*.ipk
             dist/*.apk
             dist/sha256sums.txt
+          fail_on_unmatched_files: true
           generate_release_notes: true
