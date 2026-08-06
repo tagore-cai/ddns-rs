@@ -27,9 +27,14 @@ jobs:
 
       - name: Build Vue frontend
         run: |
+          set -x
+          node -v
+          npm -v
           cd luci
           npm ci
           npm run build:no-pkg
+          test -f luci-app-ddns-rs/htdocs/luci-static/resources/ddns-rs-app/ddns-rs-app.js
+          echo "bundle OK"
 
       - name: Resolve version
         id: version
