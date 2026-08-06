@@ -1,8 +1,6 @@
 /*   Copyright (C) 2026 ddns-rs maintainers
  *
- * Binary page - mounts the Vite-built Vue 3 app (ddns-rs-app.js).
- * The Vue bundle talks to the rpcd backend (luci.ddns-rs) directly via
- * ubus JSON-RPC; this view only provides the mount point.
+ * Binary page - mounts the Vite-built Vue app (page: binary).
  */
 
 'use strict';
@@ -34,7 +32,7 @@ return view.extend({
 		loadCss(L.url('resources/ddns-rs-app/ddns-rs-app.css'));
 		loadScript(L.url('resources/ddns-rs-app/ddns-rs-app.js')).then(function() {
 			if (window.__DDNS_RS_APP__ && typeof window.__DDNS_RS_APP__.mount === 'function')
-				window.__DDNS_RS_APP__.mount(container);
+				window.__DDNS_RS_APP__.mount(container, 'binary');
 		}).catch(function(err) {
 			var el = E('p', { 'class': 'alert-message danger' }, String(err));
 			container.appendChild(el);

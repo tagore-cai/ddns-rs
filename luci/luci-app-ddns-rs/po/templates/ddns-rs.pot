@@ -3,12 +3,6 @@ msgstr ""
 "Content-Type: text/plain; charset=UTF-8\n"
 "Project-Id-Version: ddns-rs\n"
 
-msgid "Ali DNS 223.5.5.5"
-msgstr ""
-
-msgid "Ali DNS 223.6.6.6"
-msgstr ""
-
 msgid "Auto Install / Update"
 msgstr ""
 
@@ -24,37 +18,16 @@ msgstr ""
 msgid "Binary path"
 msgstr ""
 
-msgid "Checking status..."
-msgstr ""
-
 msgid "Clear Logs"
 msgstr ""
 
 msgid "Clearing..."
 msgstr ""
 
-msgid "Close"
-msgstr ""
-
-msgid "CloudFlare DNS 1.1.1.1"
-msgstr ""
-
-msgid "Current Version"
-msgstr ""
-
 msgid "DDNS-RS"
 msgstr ""
 
 msgid "DDNS-RS Binary Status"
-msgstr ""
-
-msgid "DDNS-RS automatically obtains your public IPv4 or IPv6 address and resolves it to the corresponding domain name service."
-msgstr ""
-
-msgid "DDNS-RS command reset may have failed, but configuration file has been updated."
-msgstr ""
-
-msgid "DDNS-RS service restarted successfully"
 msgstr ""
 
 msgid "Default web interface login: Username: admin, Password: admin12345"
@@ -66,31 +39,19 @@ msgstr ""
 msgid "Do not start web services"
 msgstr ""
 
-msgid "ERROR:"
-msgstr ""
-
 msgid "Enable"
 msgstr ""
 
 msgid "Enter a direct download URL of the ddns-rs binary or .tar.gz archive."
 msgstr ""
 
-msgid "Failed to clear"
-msgstr ""
-
 msgid "Failed to read logs: %s"
-msgstr ""
-
-msgid "Failed to restart service:"
 msgstr ""
 
 msgid "Full listen address, e.g. [::]:9876 or 0.0.0.0:9876"
 msgstr ""
 
-msgid "Google DNS 8.8.4.4"
-msgstr ""
-
-msgid "Google DNS 8.8.8.8"
+msgid "If the binary is missing, it will be downloaded from the default release. If installed, it will check for the latest version and update automatically."
 msgstr ""
 
 msgid "Install Binary"
@@ -108,13 +69,7 @@ msgstr ""
 msgid "Loading logs..."
 msgstr ""
 
-msgid "Loading..."
-msgstr ""
-
 msgid "Log"
-msgstr ""
-
-msgid "Logs cleared!"
 msgstr ""
 
 msgid "NOT RUNNING"
@@ -141,7 +96,7 @@ msgstr ""
 msgid "Operation failed"
 msgstr ""
 
-msgid "Partial Reset"
+msgid "Password reset. Restart the service to apply."
 msgstr ""
 
 msgid "Please enter a download URL"
@@ -153,6 +108,9 @@ msgstr ""
 msgid "RUNNING"
 msgstr ""
 
+msgid "Refresh"
+msgstr ""
+
 msgid "Refresh every 5 seconds."
 msgstr ""
 
@@ -162,25 +120,16 @@ msgstr ""
 msgid "Reset account password"
 msgstr ""
 
-msgid "Reset username/password failed:"
-msgstr ""
-
-msgid "Resetting Password"
-msgstr ""
-
-msgid "Resetting admin username and password, please wait..."
-msgstr ""
-
-msgid "Restart Later"
-msgstr ""
-
-msgid "Restart Service Now"
+msgid "Reset web interface password to admin/admin12345?"
 msgstr ""
 
 msgid "Running"
 msgstr ""
 
-msgid "SUCCESS:"
+msgid "Save & Apply"
+msgstr ""
+
+msgid "Saved. Restart the service to apply."
 msgstr ""
 
 msgid "Service"
@@ -198,9 +147,6 @@ msgstr ""
 msgid "Stopped"
 msgstr ""
 
-msgid "Tencent DNS 119.29.29.29"
-msgstr ""
-
 msgid "Update interval (seconds)"
 msgstr ""
 
@@ -210,12 +156,6 @@ msgstr ""
 msgid "Upload & Install"
 msgstr ""
 
-msgid "Username and Password Reset Successful"
-msgstr ""
-
-msgid "Username: admin, Password: admin12345"
-msgstr ""
-
 msgid "Version"
 msgstr ""
 
@@ -223,11 +163,5 @@ msgid "Working..."
 msgstr ""
 
 msgid "Yes"
-msgstr ""
-
-msgid "You may need to restart DDNS-RS service manually."
-msgstr ""
-
-msgid "You need to restart DDNS-RS service for the changes to take effect."
 msgstr ""
 

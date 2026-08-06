@@ -3,12 +3,6 @@ msgstr ""
 "Content-Type: text/plain; charset=UTF-8\n"
 "Project-Id-Version: ddns-rs\n"
 
-msgid "Ali DNS 223.5.5.5"
-msgstr "阿里 DNS 223.5.5.5"
-
-msgid "Ali DNS 223.6.6.6"
-msgstr "阿里 DNS 223.6.6.6"
-
 msgid "Auto Install / Update"
 msgstr "自动安装 / 更新"
 
@@ -24,38 +18,17 @@ msgstr "二进制"
 msgid "Binary path"
 msgstr "二进制路径"
 
-msgid "Checking status..."
-msgstr "检查状态中..."
-
 msgid "Clear Logs"
 msgstr "清除日志"
 
 msgid "Clearing..."
 msgstr "正在清除..."
 
-msgid "Close"
-msgstr "关闭"
-
-msgid "CloudFlare DNS 1.1.1.1"
-msgstr "CloudFlare DNS 1.1.1.1"
-
-msgid "Current Version"
-msgstr "当前版本"
-
 msgid "DDNS-RS"
 msgstr "DDNS-RS"
 
 msgid "DDNS-RS Binary Status"
 msgstr "DDNS-RS 二进制状态"
-
-msgid "DDNS-RS automatically obtains your public IPv4 or IPv6 address and resolves it to the corresponding domain name service."
-msgstr "DDNS-RS 自动获取您的公网 IPv4 或 IPv6 地址，并解析到对应的域名服务。"
-
-msgid "DDNS-RS command reset may have failed, but configuration file has been updated."
-msgstr "DDNS-RS 命令重置可能失败，但配置文件已更新。"
-
-msgid "DDNS-RS service restarted successfully"
-msgstr "DDNS-RS 服务重启成功"
 
 msgid "Default web interface login: Username: admin, Password: admin12345"
 msgstr "Web 界面默认登录：用户名 admin，密码 admin12345"
@@ -66,32 +39,20 @@ msgstr "延迟启动（秒）"
 msgid "Do not start web services"
 msgstr "不启动Web服务"
 
-msgid "ERROR:"
-msgstr "错误:"
-
 msgid "Enable"
 msgstr "启用"
 
 msgid "Enter a direct download URL of the ddns-rs binary or .tar.gz archive."
 msgstr "请输入 ddns-rs 二进制或 .tar.gz 压缩包的直链下载地址。"
 
-msgid "Failed to clear"
-msgstr "清除失败"
-
 msgid "Failed to read logs: %s"
 msgstr "读取日志失败: %s"
-
-msgid "Failed to restart service:"
-msgstr "重启服务失败:"
 
 msgid "Full listen address, e.g. [::]:9876 or 0.0.0.0:9876"
 msgstr "完整监听地址，例如 [::]:9876 或 0.0.0.0:9876"
 
-msgid "Google DNS 8.8.4.4"
-msgstr "谷歌 DNS 8.8.4.4"
-
-msgid "Google DNS 8.8.8.8"
-msgstr "谷歌 DNS 8.8.8.8"
+msgid "If the binary is missing, it will be downloaded from the default release. If installed, it will check for the latest version and update automatically."
+msgstr "若缺少二进制将自动从默认发行版下载；若已安装则检查最新版本并自动更新。"
 
 msgid "Install Binary"
 msgstr "安装二进制"
@@ -108,14 +69,8 @@ msgstr "监听地址"
 msgid "Loading logs..."
 msgstr "正在加载日志..."
 
-msgid "Loading..."
-msgstr "加载中..."
-
 msgid "Log"
 msgstr "日志"
-
-msgid "Logs cleared!"
-msgstr "已清除"
 
 msgid "NOT RUNNING"
 msgstr "未运行"
@@ -141,8 +96,8 @@ msgstr "操作完成。"
 msgid "Operation failed"
 msgstr "操作失败"
 
-msgid "Partial Reset"
-msgstr "部分重置"
+msgid "Password reset. Restart the service to apply."
+msgstr "密码已重置，重启服务后生效。"
 
 msgid "Please enter a download URL"
 msgstr "请输入下载地址"
@@ -153,6 +108,9 @@ msgstr "提供商比较间隔"
 msgid "RUNNING"
 msgstr "运行中"
 
+msgid "Refresh"
+msgstr "刷新"
+
 msgid "Refresh every 5 seconds."
 msgstr "每 5 秒刷新"
 
@@ -162,26 +120,17 @@ msgstr "重置"
 msgid "Reset account password"
 msgstr "重置账户密码"
 
-msgid "Reset username/password failed:"
-msgstr "重置用户名/密码失败:"
-
-msgid "Resetting Password"
-msgstr "重置密码"
-
-msgid "Resetting admin username and password, please wait..."
-msgstr "正在重置管理员用户名和密码，请稍候..."
-
-msgid "Restart Later"
-msgstr "稍后重启"
-
-msgid "Restart Service Now"
-msgstr "立即重启服务"
+msgid "Reset web interface password to admin/admin12345?"
+msgstr "将 Web 界面密码重置为 admin/admin12345？"
 
 msgid "Running"
 msgstr "运行中"
 
-msgid "SUCCESS:"
-msgstr "成功:"
+msgid "Save & Apply"
+msgstr "保存并应用"
+
+msgid "Saved. Restart the service to apply."
+msgstr "已保存，重启服务后生效。"
 
 msgid "Service"
 msgstr "服务"
@@ -198,9 +147,6 @@ msgstr "状态检查错误"
 msgid "Stopped"
 msgstr "已停止"
 
-msgid "Tencent DNS 119.29.29.29"
-msgstr "腾讯 DNS 119.29.29.29"
-
 msgid "Update interval (seconds)"
 msgstr "更新间隔（秒）"
 
@@ -210,12 +156,6 @@ msgstr "更新间隔范围(60-86400)秒"
 msgid "Upload & Install"
 msgstr "上传并安装"
 
-msgid "Username and Password Reset Successful"
-msgstr "用户名和密码重置成功"
-
-msgid "Username: admin, Password: admin12345"
-msgstr "用户名: admin, 密码: admin12345"
-
 msgid "Version"
 msgstr "版本"
 
@@ -224,10 +164,4 @@ msgstr "工作中..."
 
 msgid "Yes"
 msgstr "是"
-
-msgid "You may need to restart DDNS-RS service manually."
-msgstr "您可能需要手动重启 DDNS-RS 服务。"
-
-msgid "You need to restart DDNS-RS service for the changes to take effect."
-msgstr "您需要重启 DDNS-RS 服务以使更改生效。"
 

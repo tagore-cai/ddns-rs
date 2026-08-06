@@ -78,3 +78,43 @@ export function declareApi(object, methods) {
     api[name] = createApi(object, name)
   return api
 }
+
+/**
+ * uci - read/write UCI config via ubus (mirrors LuCI's uci module).
+ * @param {string} config e.g. 'ddns-rs'
+ * @returns {{ load: function(): Promise<object>, set: function(section, values): Promise<*> }}
+ */
+export function uci(config) {
+  const api = declareApi('uci', ['get', 'set', 'save', 'apply', 'commit'])
+
+  return {
+    /** Load the whole config; resolves to the values object. */
+    async load() {
+      const res = await api.get(config)
+      return (res && res.values) || {}
+    },
+    /** Set option values on a section and commit. */
+    async set(section, values) {
+      await api.set(config, section, values)
+      await api.save(config)
+    }
+  }
+}
+
+/**
+ * file - run commands / read files via ubus (mirrors LuCI's fs module).
+ * @returns {{ exec: function(cmd, args?): Promise<{code,stdout,stderr}>, read: function(path): Promise<string> }}
+ */
+export function file() {
+  const api = declareApi('file', ['exec', 'read', 'write'])
+
+  return {
+    async exec(command, args) {
+      return api.exec(command, args || [], {})
+    },
+    async read(path) {
+      const res = await api.read(path)
+      return (res && res.data) || ''
+    }
+  }
+}
